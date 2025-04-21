@@ -1,240 +1,372 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
+using TMPro;
 
 public abstract class Gun : MonoBehaviour
 {
     [Header("Data")]
     public GunData gunData;
-    [SerializeField] public Transform RayCaster;
-    [SerializeField] public Animator animator;
-    [SerializeField] private TMP_Text AmmoText;
+    [SerializeField] protected Transform rayCaster;
+    [SerializeField] protected Animator animator;
+    [SerializeField] private TMP_Text ammoText;
     protected AudioSource audioSource;
 
     [Header("Recoil")]
-    //TODO 
-    //recoil setting e.g serialize recoil points to GunData
-
     [SerializeField] public GunRecoil gunRecoil;
 
     [Header("SFX")]
-    public AudioClip AimSFX;
-    public AudioClip ReloadSFX;
-    public AudioClip ShootSFX;
-    public AudioClip ShootEmptySFX;
+    public AudioClip aimSFX;
+    public AudioClip reloadSFX;
+    public AudioClip shootSFX;
+    public AudioClip shootEmptySFX;
+    public AudioClip fireModeSFX;
+
     [Header("MuzzleFlash")]
     public GameObject muzzleEffectsPrefab;
     public Transform muzzlePoint;
     public float showTime = 0.2f;
-    private GameObject effectsInstance;
-    private bool isEffectActive;
 
+    [Header("Input Keys")]
+    [SerializeField] private KeyCode reloadKey = KeyCode.R;
+    [SerializeField] private KeyCode fireToggleKey = KeyCode.B;
+    [SerializeField] private KeyCode idleToggleKey = KeyCode.V;
 
-    public bool Cursor = true;
+    // Анимационные параметры
+    protected int reloadHashCode;
+    protected int fireHashCode;
+    protected int aimHashCode;
+    protected int runHashCode;
+    protected int idleHashCode;
 
-    protected int ReloadHashCode;
-    protected int FireHashCode;
-    protected int AimHashCode;
-    protected int RunHashCode;
-    protected int IdleHashCode;
-    
-    private float currentAmmo = 0f;
-    private float nextTimeToFire = 0f; 
-    private float nextTimeToPlayAimSFX = 0f;
-
-    private bool isReloading = false;
+    // Состояние оружия
+    protected float currentAmmo;
+    protected float nextTimeToFire = 0f;
+    protected bool isReloading = false;
+    protected bool isAiming = false;
     protected bool isIdle = false;
-    protected bool canShoot = false;
-    protected bool hasPlayedSound = false;
+    protected bool isAutoMode = true;
+
+    // Вспомогательные флаги
+    protected bool hasPlayedAimSound = false;
     private bool isPlayingEmptySound = false;
-    private bool isPlayingFireModeSound = false;
+    private GameObject muzzleFlashInstance;
 
-    protected bool FireMode = true;
-
-    Dictionary<string, float> damageKef = new Dictionary<string, float>
+    // Множители урона для разных частей тела
+    protected Dictionary<string, float> damageMultipliers = new Dictionary<string, float>
     {
-        { "Hand", 1.3f },
-        { "Leg", 1.2f },
         { "Head", 5.0f },
-        { "Body", 1.5f }
+        { "Body", 1.5f },
+        { "Hand", 1.3f },
+        { "Leg", 1.2f }
     };
 
-    private void Awake()
+    protected virtual void Awake()
     {
+        // Получаем компоненты
         audioSource = GetComponentInParent<AudioSource>();
-        if(gunRecoil == null)
+        if (gunRecoil == null)
             gunRecoil = new GunRecoil();
 
-        ReloadHashCode = Animator.StringToHash("Reload");
-        FireHashCode = Animator.StringToHash("Fire");
-        AimHashCode = Animator.StringToHash("Aim");
-        RunHashCode = Animator.StringToHash("Run");
-        IdleHashCode = Animator.StringToHash("Idle");
+        // Кэшируем хеши анимаций
+        reloadHashCode = Animator.StringToHash("Reload");
+        fireHashCode = Animator.StringToHash("Fire");
+        aimHashCode = Animator.StringToHash("Aim");
+        runHashCode = Animator.StringToHash("Run");
+        idleHashCode = Animator.StringToHash("Idle");
     }
 
-    private void Start()
+    protected virtual void Start()
     {
         currentAmmo = gunData.magazineSize;
-        if (!Cursor)
-        {
-            UnityEngine.Cursor.lockState = CursorLockMode.None;
-            UnityEngine.Cursor.visible = true;
-        }
-        else
-        {
-            UnityEngine.Cursor.lockState = CursorLockMode.Locked;
-            UnityEngine.Cursor.visible = false;
-        }
 
-        effectsInstance = Instantiate(muzzleEffectsPrefab, muzzlePoint.position, muzzlePoint.rotation, muzzlePoint);
-        effectsInstance.SetActive(false);
+        // Инициализация эффекта дульного пламени
+        if (muzzleEffectsPrefab != null && muzzlePoint != null)
+        {
+            muzzleFlashInstance = Instantiate(muzzleEffectsPrefab, muzzlePoint.position, muzzlePoint.rotation, muzzlePoint);
+            muzzleFlashInstance.SetActive(false);
+        }
     }
 
     public virtual void Update()
     {
-        AmmoText.text = currentAmmo.ToString();
+        // Обновление интерфейса
+        if (ammoText != null)
+        {
+            ammoText.text = currentAmmo.ToString();
+        }
+
+        if (!IsIdle())
+        {
+            HandleShootingInput();
+        }
+
+        HandleAimingInput();
+        HandleReloadInput();
+        HandleFireModeToggleInput();
+        HandleIdleToggleInput();
     }
 
-    public void TryReload()
+    public virtual void TryShoot()
     {
-        if(!isReloading && currentAmmo < gunData.magazineSize)
+        if (isReloading)
+            return;
+
+        if (currentAmmo <= 0)
+        {
+            animator.SetBool(fireHashCode, false);
+            PlayEmptySound();
+            return;
+        }
+
+        if (Time.time >= nextTimeToFire)
+        {
+            nextTimeToFire = Time.time + (1f / gunData.fireRate);
+            PerformShot();
+        }
+    }
+
+    protected virtual void PerformShot()
+    {
+        animator.SetBool(fireHashCode, true);
+
+        currentAmmo--;
+
+        ShowMuzzleFlash();
+        PlayShootSound();
+
+        Shoot();
+
+        if (gunRecoil != null)
+        {
+            gunRecoil.ApplyRecoil();
+        }
+    }
+
+    public abstract void Shoot();
+
+    public virtual void TryReload()
+    {
+        if (!isReloading && currentAmmo < gunData.magazineSize)
         {
             StartCoroutine(Reload());
         }
     }
 
-    private IEnumerator Reload()
+    protected virtual IEnumerator Reload()
     {
-
         isReloading = true;
-        canShoot = false;
 
-        animator.SetBool(FireHashCode, false);
-        animator.SetTrigger(ReloadHashCode);
+        // Сбрасываем флаг стрельбы и запускаем анимацию перезарядки
+        animator.SetBool(fireHashCode, false);
+        animator.SetTrigger(reloadHashCode);
 
+        // Ждем, пока анимация запустится
         float timeout = 1f;
         float elapsed = 0f;
-
-        while (animator.GetCurrentAnimatorStateInfo(0).shortNameHash != ReloadHashCode && elapsed < timeout)
+        while (animator.GetCurrentAnimatorStateInfo(0).shortNameHash != reloadHashCode && elapsed < timeout)
         {
             yield return null;
             elapsed += Time.deltaTime;
         }
 
-        audioSource.PlayOneShot(ReloadSFX);
+        // Воспроизводим звук перезарядки
+        if (reloadSFX != null)
+        {
+            audioSource.PlayOneShot(reloadSFX);
+        }
+
+        // Ждем окончания перезарядки
         yield return new WaitForSeconds(gunData.reloadTime);
 
+        // Пополняем магазин
         currentAmmo = gunData.magazineSize;
         isReloading = false;
-        canShoot = true;
     }
 
-    public void TryShoot()
+    public virtual void SetAiming(bool aiming)
     {
-        if ((isReloading))
+        // Нельзя прицеливаться во время бега
+        if (animator.GetBool(runHashCode))
+        { return; }
+
+        if (IsIdle())
+        { animator.SetBool(aimHashCode, false); }
+
+        isAiming = aiming;
+        animator.SetBool(aimHashCode, aiming);
+
+        // Воспроизводим звук прицеливания при первом нажатии
+        if (aiming && !hasPlayedAimSound)
         {
-            return;
-        }
-        if(currentAmmo <= 0f)
-        {
-            canShoot = false;
-            SetShootAnimation();
-            if(Time.time >= nextTimeToFire && !isPlayingEmptySound && !animator.GetBool(RunHashCode)){
-                audioSource.PlayOneShot(ShootEmptySFX);
-                isPlayingEmptySound = true;
-                StartCoroutine(ResetEmptySound(ShootEmptySFX.length));
+            if (aimSFX != null)
+            {
+                audioSource.PlayOneShot(aimSFX);
             }
-            return;
+            hasPlayedAimSound = true;
         }
-        if(Time.time >= nextTimeToFire)
+        else if (!aiming)
         {
-            nextTimeToFire = Time.time + (1 / gunData.fireRate);
-            HandleShoot();
+            hasPlayedAimSound = false;
         }
     }
 
-    private IEnumerator ResetEmptySound(float delay)
+    public virtual void ToggleFireMode()
+    {
+        isAutoMode = !isAutoMode;
+
+        // Воспроизводим звук переключения режима
+        if (fireModeSFX != null)
+        {
+            audioSource.PlayOneShot(fireModeSFX);
+        }
+        else if (shootEmptySFX != null) // Используем звук пустого патронника, если специальный не задан
+        {
+            audioSource.PlayOneShot(shootEmptySFX);
+        }
+    }
+
+    public virtual void SetIdleMode(bool idle)
+    {
+        isIdle = idle;
+        animator.SetBool(idleHashCode, idle);
+    }
+
+
+
+    protected virtual void ShowMuzzleFlash()
+    {
+        if (muzzleFlashInstance != null)
+        {
+            muzzleFlashInstance.SetActive(true);
+
+            // Запускаем все системы частиц
+            foreach (ParticleSystem ps in muzzleFlashInstance.GetComponentsInChildren<ParticleSystem>())
+            {
+                ps.Play();
+            }
+
+            // Отключаем эффект через заданное время
+            CancelInvoke(nameof(HideMuzzleFlash));
+            Invoke(nameof(HideMuzzleFlash), showTime);
+        }
+    }
+
+    private void HideMuzzleFlash()
+    {
+        if (muzzleFlashInstance != null)
+        {
+            muzzleFlashInstance.SetActive(false);
+        }
+    }
+
+    protected virtual void PlayShootSound()
+    {
+        if (audioSource != null && shootSFX != null)
+        {
+            audioSource.PlayOneShot(shootSFX);
+        }
+    }
+
+    protected virtual void PlayEmptySound()
+    {
+        if (audioSource != null && shootEmptySFX != null && !isPlayingEmptySound)
+        {
+            audioSource.PlayOneShot(shootEmptySFX);
+            isPlayingEmptySound = true;
+
+            StartCoroutine(ResetEmptySoundFlag(shootEmptySFX.length));
+        }
+    }
+
+    private IEnumerator ResetEmptySoundFlag(float delay)
     {
         yield return new WaitForSeconds(delay);
         isPlayingEmptySound = false;
     }
 
-    private void HandleShoot()
-    {
-        animator.SetBool(FireHashCode, true);
-        currentAmmo--;
-
-        muzzleFlash();
-        Shoot();
-        audioSource.PlayOneShot(ShootSFX);
-        StartCoroutine(SetShootAnimation());
-    }
-
-    private void muzzleFlash()
-    {
-        effectsInstance.SetActive(true);
-        foreach (var ps in effectsInstance.GetComponentsInChildren<ParticleSystem>())
-        {
-            ps.Play();
-        }
-        CancelInvoke(nameof(HideEffects));
-        Invoke(nameof(HideEffects), showTime);
-    }
-
-    public IEnumerator SetShootAnimation()
+    protected IEnumerator ResetFireAnimation()
     {
         yield return new WaitForSeconds(0.1f);
-        animator.SetBool(FireHashCode, canShoot);
-
-    }
-    public void SetIdleAnimation()
-    {
-        isIdle = !isIdle;
-        animator.SetBool(IdleHashCode, isIdle);
+        animator.SetBool(fireHashCode, false);
     }
 
-    public float DetermineDamage(string tag)
+    protected float CalculateDamage(string hitTag)
     {
-        if(damageKef.ContainsKey(tag))
+        if (damageMultipliers.TryGetValue(hitTag, out float multiplier))
         {
-            return gunData.damage * damageKef[tag];
+            return gunData.damage * multiplier;
         }
-        return 1.0f;
-    }
-
-    void HideEffects()
-    {
-        effectsInstance.SetActive(false);
+        return gunData.damage;
     }
 
 
-    public IEnumerator FireModeSound(float delay)
-    {
-        if (isPlayingFireModeSound)
-            yield break;
 
-        isPlayingFireModeSound = true;
-        audioSource.PlayOneShot(ShootEmptySFX);
-        yield return new WaitForSeconds(delay);
-        isPlayingFireModeSound = false;
-    }
+    public bool IsAutoMode() => isAutoMode;
+    public bool IsAiming() => isAiming;
+    public bool IsReloading() => isReloading;
+    public bool IsIdle() => isIdle;
+    public int GetCurrentAmmo() => Mathf.RoundToInt(currentAmmo);
 
-    public IEnumerator AimSound(float delay)
+
+    private void HandleShootingInput()
     {
-        if(Time.time >= nextTimeToPlayAimSFX)
+        if (IsAutoMode())
         {
-            nextTimeToFire = Time.time + (1 / 2);
-            audioSource.PlayOneShot(AimSFX);
-
+            if (Input.GetButton("Fire1"))
+            {
+                TryShoot();
+            }
+            else
+            {
+                animator.SetBool(fireHashCode, false);
+            }
         }
-
-        yield return new WaitForSeconds(delay);
-
+        else if (!IsAutoMode())
+        {
+            if (Input.GetButtonDown("Fire1"))
+            {
+                TryShoot();
+            }
+            else
+            {
+                animator.SetBool(fireHashCode, false);
+            }
+        }
     }
 
-    public abstract void Shoot();
-     
+    private void HandleAimingInput()
+    {
+        bool isAimPressed = Input.GetKey(KeyCode.Mouse1);
 
+        if (isAimPressed != IsAiming())
+        {
+            SetAiming(isAimPressed);
+        }
+    }
+
+    private void HandleReloadInput()
+    {
+        if (Input.GetKeyDown(reloadKey))
+        {
+            TryReload();
+        }
+    }
+
+    private void HandleFireModeToggleInput()
+    {
+        if (Input.GetKeyDown(fireToggleKey))
+        {
+            ToggleFireMode();
+        }
+    }
+
+    private void HandleIdleToggleInput()
+    {
+        if (Input.GetKeyDown(idleToggleKey))
+        {
+            SetIdleMode(!IsIdle());
+        }
+    }
 }
+
