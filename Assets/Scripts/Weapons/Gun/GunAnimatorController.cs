@@ -2,17 +2,35 @@ using UnityEngine;
 
 public class GunAnimatorController : MonoBehaviour
 {
-    [SerializeField] private Animator _anim;
+    private Animator _anim;
     private int _reloadHash, _fireHash, _aimHash, _runHash, _idleHash;
 
     public GunAnimatorController()
     {
         InitializeHashes();
+
+    }
+
+    private void OnEnable()
+    {
+        EventBus.Instance.SetUpWeaponAnimator += SetUpAnimator;
         EventBus.Instance.GunReload += TriggerReload;
         EventBus.Instance.GunFire += SetFiring;
         EventBus.Instance.GunAim += SetAiming;
         EventBus.Instance.GunIdle += ToggleIdle;
+    }
 
+    private void SetUpAnimator(Animator animator)
+    {
+        _anim = animator;
+    }
+
+    private void OnDisable()
+    {
+        EventBus.Instance.GunReload -= TriggerReload;
+        EventBus.Instance.GunFire -= SetFiring;
+        EventBus.Instance.GunAim -= SetAiming;
+        EventBus.Instance.GunIdle -= ToggleIdle;
     }
 
     private void InitializeHashes()

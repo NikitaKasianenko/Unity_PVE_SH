@@ -30,6 +30,7 @@ public class EventBus
     public Action<bool> GunIdle;
 
     //animator
+    public Action<Animator> SetUpWeaponAnimator;
     public Action<bool> ReloadAnimState;
     public Action<bool> IsRunning;
 

@@ -29,6 +29,7 @@ public abstract class Gun : MonoBehaviour
     protected bool hasPlayedAimSound = false;
     private bool isPlayingEmptySound = false;
     private GameObject muzzleFlashInstance;
+    private Animator _anim;
 
     protected Dictionary<string, float> damageMultipliers = new Dictionary<string, float>
     {
@@ -38,23 +39,21 @@ public abstract class Gun : MonoBehaviour
         { "Leg", 1.2f }
     };
 
+
+    private void Awake()
+    {
+        _anim = GetComponent<Animator>();
+    }
+
     protected virtual void Start()
     {
         gunAmmo = new GunAmmo(gunData);
 
-        isAutoMode = gunData.isAutomatic;
-
+        EventBus.Instance.SetUpWeaponAnimator?.Invoke(_anim);
         EventBus.Instance.GunDataInit?.Invoke(gunData);
         EventBus.Instance.RecoilData?.Invoke(gunData.recoilPoints);
 
-        EventBus.Instance.FireInput += HandleShootingInput;
-        EventBus.Instance.AimingInput += SetAiming;
-        EventBus.Instance.ReloadInput += TryReload;
-        EventBus.Instance.ToggleFireModeInput += ToggleFireMode;
-        EventBus.Instance.ToggleIdleInput += SetIdleMode;
-        EventBus.Instance.ReloadAnimState += OnReloadAnimState;
-        EventBus.Instance.IsRunning += OnRunningState;
-
+        isAutoMode = gunData.isAutomatic;
 
 
         if (muzzleEffectsPrefab != null && muzzlePoint != null)
@@ -64,14 +63,24 @@ public abstract class Gun : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        EventBus.Instance.FireInput += HandleShootingInput;
+        EventBus.Instance.AimingInput += SetAiming;
+        EventBus.Instance.ReloadInput += TryReload;
+        EventBus.Instance.ToggleFireModeInput += ToggleFireMode;
+        EventBus.Instance.ToggleIdleInput += SetIdleMode;
+        EventBus.Instance.ReloadAnimState += OnReloadAnimState;
+        EventBus.Instance.IsRunning += OnRunningState;
+    }
+
     private void OnRunningState(bool state)
     {
         isRunning = state;
     }
 
-    private void OnDestroy()
+    private void OnDisable()
     {
-        //EventBus.Instance.FireInput -= TryShoot;
         EventBus.Instance.FireInput -= HandleShootingInput;
         EventBus.Instance.AimingInput -= SetAiming;
         EventBus.Instance.ReloadInput -= TryReload;
@@ -79,10 +88,6 @@ public abstract class Gun : MonoBehaviour
         EventBus.Instance.ToggleIdleInput -= SetIdleMode;
         EventBus.Instance.ReloadAnimState -= OnReloadAnimState;
         EventBus.Instance.IsRunning -= OnRunningState;
-        if (muzzleFlashInstance != null)
-        {
-            Destroy(muzzleFlashInstance);
-        }
     }
 
     public virtual void Update()
@@ -233,18 +238,6 @@ public abstract class Gun : MonoBehaviour
         }
     }
 
-
-    private IEnumerator ResetEmptySoundFlag(float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        isPlayingEmptySound = false;
-    }
-
-    protected IEnumerator ResetFireAnimation()
-    {
-        yield return new WaitForSeconds(0.1f);
-        EventBus.Instance.GunAim?.Invoke(false);
-    }
 
     protected float CalculateDamage(string hitTag)
     {
