@@ -1,58 +1,35 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using TMPro;
 
 public abstract class Gun : MonoBehaviour
 {
     [Header("Data")]
     public GunData gunData;
     [SerializeField] protected Transform rayCaster;
-    [SerializeField] protected Animator animator;
-    [SerializeField] private TMP_Text ammoText;
-    protected AudioSource audioSource;
 
-    [Header("Recoil")]
-    [SerializeField] public GunRecoil gunRecoil;
-
-    [Header("SFX")]
-    public AudioClip aimSFX;
-    public AudioClip reloadSFX;
-    public AudioClip shootSFX;
-    public AudioClip shootEmptySFX;
-    public AudioClip fireModeSFX;
 
     [Header("MuzzleFlash")]
     public GameObject muzzleEffectsPrefab;
     public Transform muzzlePoint;
     public float showTime = 0.2f;
 
-    [Header("Input Keys")]
-    [SerializeField] private KeyCode reloadKey = KeyCode.R;
-    [SerializeField] private KeyCode fireToggleKey = KeyCode.B;
-    [SerializeField] private KeyCode idleToggleKey = KeyCode.V;
-
-    // Анимационные параметры
-    protected int reloadHashCode;
-    protected int fireHashCode;
-    protected int aimHashCode;
-    protected int runHashCode;
-    protected int idleHashCode;
-
     // Состояние оружия
-    protected float currentAmmo;
+    protected GunAmmo gunAmmo;
     protected float nextTimeToFire = 0f;
     protected bool isReloading = false;
     protected bool isAiming = false;
     protected bool isIdle = false;
     protected bool isAutoMode = true;
-
+    protected bool isShooting = false;
+    protected bool reloadAnimStarted;
+    protected bool isRunning = false; // Флаг для состояния бега
     // Вспомогательные флаги
+
     protected bool hasPlayedAimSound = false;
     private bool isPlayingEmptySound = false;
     private GameObject muzzleFlashInstance;
 
-    // Множители урона для разных частей тела
     protected Dictionary<string, float> damageMultipliers = new Dictionary<string, float>
     {
         { "Head", 5.0f },
@@ -61,26 +38,25 @@ public abstract class Gun : MonoBehaviour
         { "Leg", 1.2f }
     };
 
-    protected virtual void Awake()
-    {
-        // Получаем компоненты
-        audioSource = GetComponentInParent<AudioSource>();
-        if (gunRecoil == null)
-            gunRecoil = new GunRecoil();
-
-        // Кэшируем хеши анимаций
-        reloadHashCode = Animator.StringToHash("Reload");
-        fireHashCode = Animator.StringToHash("Fire");
-        aimHashCode = Animator.StringToHash("Aim");
-        runHashCode = Animator.StringToHash("Run");
-        idleHashCode = Animator.StringToHash("Idle");
-    }
-
     protected virtual void Start()
     {
-        currentAmmo = gunData.magazineSize;
+        gunAmmo = new GunAmmo(gunData);
 
-        // Инициализация эффекта дульного пламени
+        isAutoMode = gunData.isAutomatic;
+
+        EventBus.Instance.GunDataInit?.Invoke(gunData);
+        EventBus.Instance.RecoilData?.Invoke(gunData.recoilPoints);
+
+        EventBus.Instance.FireInput += HandleShootingInput;
+        EventBus.Instance.AimingInput += SetAiming;
+        EventBus.Instance.ReloadInput += TryReload;
+        EventBus.Instance.ToggleFireModeInput += ToggleFireMode;
+        EventBus.Instance.ToggleIdleInput += SetIdleMode;
+        EventBus.Instance.ReloadAnimState += OnReloadAnimState;
+        EventBus.Instance.IsRunning += OnRunningState;
+
+
+
         if (muzzleEffectsPrefab != null && muzzlePoint != null)
         {
             muzzleFlashInstance = Instantiate(muzzleEffectsPrefab, muzzlePoint.position, muzzlePoint.rotation, muzzlePoint);
@@ -88,23 +64,29 @@ public abstract class Gun : MonoBehaviour
         }
     }
 
+    private void OnRunningState(bool state)
+    {
+        isRunning = state;
+    }
+
+    private void OnDestroy()
+    {
+        //EventBus.Instance.FireInput -= TryShoot;
+        EventBus.Instance.FireInput -= HandleShootingInput;
+        EventBus.Instance.AimingInput -= SetAiming;
+        EventBus.Instance.ReloadInput -= TryReload;
+        EventBus.Instance.ToggleFireModeInput -= ToggleFireMode;
+        EventBus.Instance.ToggleIdleInput -= SetIdleMode;
+        EventBus.Instance.ReloadAnimState -= OnReloadAnimState;
+        EventBus.Instance.IsRunning -= OnRunningState;
+        if (muzzleFlashInstance != null)
+        {
+            Destroy(muzzleFlashInstance);
+        }
+    }
+
     public virtual void Update()
     {
-        // Обновление интерфейса
-        if (ammoText != null)
-        {
-            ammoText.text = currentAmmo.ToString();
-        }
-
-        if (!IsIdle())
-        {
-            HandleShootingInput();
-        }
-
-        HandleAimingInput();
-        HandleReloadInput();
-        HandleFireModeToggleInput();
-        HandleIdleToggleInput();
     }
 
     public virtual void TryShoot()
@@ -112,10 +94,9 @@ public abstract class Gun : MonoBehaviour
         if (isReloading)
             return;
 
-        if (currentAmmo <= 0)
+        if (!gunAmmo.HasAmmo())
         {
-            animator.SetBool(fireHashCode, false);
-            PlayEmptySound();
+            NoAmmoEvent();
             return;
         }
 
@@ -126,28 +107,33 @@ public abstract class Gun : MonoBehaviour
         }
     }
 
+    private void NoAmmoEvent()
+    {
+        EventBus.Instance.GunFire?.Invoke(false);
+        EventBus.Instance.GunEmptySound?.Invoke();
+    }
+
     protected virtual void PerformShot()
     {
-        animator.SetBool(fireHashCode, true);
-
-        currentAmmo--;
-
-        ShowMuzzleFlash();
-        PlayShootSound();
+        EventBus.Instance.GunFire?.Invoke(true);
+        gunAmmo.UseAmmo();
 
         Shoot();
+        ShowMuzzleFlash();
+        EventBus.Instance.ApplyRecoil?.Invoke();
+        EventBus.Instance.GunFireSound?.Invoke();
+    }
 
-        if (gunRecoil != null)
-        {
-            gunRecoil.ApplyRecoil();
-        }
+    private void OnReloadAnimState(bool isStarted)
+    {
+        reloadAnimStarted = isStarted;
     }
 
     public abstract void Shoot();
 
     public virtual void TryReload()
     {
-        if (!isReloading && currentAmmo < gunData.magazineSize)
+        if (!isReloading && gunAmmo.canReload())
         {
             StartCoroutine(Reload());
         }
@@ -158,51 +144,42 @@ public abstract class Gun : MonoBehaviour
         isReloading = true;
 
         // Сбрасываем флаг стрельбы и запускаем анимацию перезарядки
-        animator.SetBool(fireHashCode, false);
-        animator.SetTrigger(reloadHashCode);
+        EventBus.Instance.GunFire?.Invoke(false);
+        EventBus.Instance.GunReload?.Invoke();
 
         // Ждем, пока анимация запустится
-        float timeout = 1f;
-        float elapsed = 0f;
-        while (animator.GetCurrentAnimatorStateInfo(0).shortNameHash != reloadHashCode && elapsed < timeout)
+        while (!reloadAnimStarted)
         {
             yield return null;
-            elapsed += Time.deltaTime;
         }
 
         // Воспроизводим звук перезарядки
-        if (reloadSFX != null)
-        {
-            audioSource.PlayOneShot(reloadSFX);
-        }
+        EventBus.Instance.GunReloadSound?.Invoke();
 
         // Ждем окончания перезарядки
         yield return new WaitForSeconds(gunData.reloadTime);
 
         // Пополняем магазин
-        currentAmmo = gunData.magazineSize;
+        gunAmmo.Reload();
         isReloading = false;
     }
 
     public virtual void SetAiming(bool aiming)
     {
         // Нельзя прицеливаться во время бега
-        if (animator.GetBool(runHashCode))
+        if (isRunning)
         { return; }
 
-        if (IsIdle())
-        { animator.SetBool(aimHashCode, false); }
+        if (isIdle)
+        { EventBus.Instance.GunAim?.Invoke(false); }
 
         isAiming = aiming;
-        animator.SetBool(aimHashCode, aiming);
+        EventBus.Instance.GunAim?.Invoke(aiming);
 
         // Воспроизводим звук прицеливания при первом нажатии
         if (aiming && !hasPlayedAimSound)
         {
-            if (aimSFX != null)
-            {
-                audioSource.PlayOneShot(aimSFX);
-            }
+            EventBus.Instance.GunAimSound?.Invoke();
             hasPlayedAimSound = true;
         }
         else if (!aiming)
@@ -213,23 +190,19 @@ public abstract class Gun : MonoBehaviour
 
     public virtual void ToggleFireMode()
     {
-        isAutoMode = !isAutoMode;
+        if (!gunData.isAutomatic)
+        {
+            return;
+        }
 
-        // Воспроизводим звук переключения режима
-        if (fireModeSFX != null)
-        {
-            audioSource.PlayOneShot(fireModeSFX);
-        }
-        else if (shootEmptySFX != null) // Используем звук пустого патронника, если специальный не задан
-        {
-            audioSource.PlayOneShot(shootEmptySFX);
-        }
+        isAutoMode = !isAutoMode;
+        EventBus.Instance.GunFireModeToggleSound?.Invoke();
     }
 
-    public virtual void SetIdleMode(bool idle)
+    public virtual void SetIdleMode()
     {
-        isIdle = idle;
-        animator.SetBool(idleHashCode, idle);
+        isIdle = !isIdle;
+        EventBus.Instance.GunIdle?.Invoke(isIdle);
     }
 
 
@@ -260,24 +233,6 @@ public abstract class Gun : MonoBehaviour
         }
     }
 
-    protected virtual void PlayShootSound()
-    {
-        if (audioSource != null && shootSFX != null)
-        {
-            audioSource.PlayOneShot(shootSFX);
-        }
-    }
-
-    protected virtual void PlayEmptySound()
-    {
-        if (audioSource != null && shootEmptySFX != null && !isPlayingEmptySound)
-        {
-            audioSource.PlayOneShot(shootEmptySFX);
-            isPlayingEmptySound = true;
-
-            StartCoroutine(ResetEmptySoundFlag(shootEmptySFX.length));
-        }
-    }
 
     private IEnumerator ResetEmptySoundFlag(float delay)
     {
@@ -288,7 +243,7 @@ public abstract class Gun : MonoBehaviour
     protected IEnumerator ResetFireAnimation()
     {
         yield return new WaitForSeconds(0.1f);
-        animator.SetBool(fireHashCode, false);
+        EventBus.Instance.GunAim?.Invoke(false);
     }
 
     protected float CalculateDamage(string hitTag)
@@ -301,72 +256,42 @@ public abstract class Gun : MonoBehaviour
     }
 
 
-
-    public bool IsAutoMode() => isAutoMode;
-    public bool IsAiming() => isAiming;
-    public bool IsReloading() => isReloading;
-    public bool IsIdle() => isIdle;
-    public int GetCurrentAmmo() => Mathf.RoundToInt(currentAmmo);
-
-
-    private void HandleShootingInput()
+    private void HandleShootingInput(bool mode)
     {
-        if (IsAutoMode())
+        if (!mode)
         {
-            if (Input.GetButton("Fire1"))
+            EventBus.Instance.GunFire?.Invoke(false);
+        }
+
+        if (isIdle || isReloading)
+        {
+            EventBus.Instance.GunAim?.Invoke(false);
+            return;
+        }
+
+        if (mode)
+        {
+            TryShoot();
+        }
+
+
+        if (isAutoMode)
+        {
+            TryShoot();
+        }
+        else
+        {
+            if (!mode)
             {
+                isShooting = true;
+            }
+            if (mode && !isShooting)
+            {
+                isShooting = true;
                 TryShoot();
             }
-            else
-            {
-                animator.SetBool(fireHashCode, false);
-            }
-        }
-        else if (!IsAutoMode())
-        {
-            if (Input.GetButtonDown("Fire1"))
-            {
-                TryShoot();
-            }
-            else
-            {
-                animator.SetBool(fireHashCode, false);
-            }
         }
     }
 
-    private void HandleAimingInput()
-    {
-        bool isAimPressed = Input.GetKey(KeyCode.Mouse1);
-
-        if (isAimPressed != IsAiming())
-        {
-            SetAiming(isAimPressed);
-        }
-    }
-
-    private void HandleReloadInput()
-    {
-        if (Input.GetKeyDown(reloadKey))
-        {
-            TryReload();
-        }
-    }
-
-    private void HandleFireModeToggleInput()
-    {
-        if (Input.GetKeyDown(fireToggleKey))
-        {
-            ToggleFireMode();
-        }
-    }
-
-    private void HandleIdleToggleInput()
-    {
-        if (Input.GetKeyDown(idleToggleKey))
-        {
-            SetIdleMode(!IsIdle());
-        }
-    }
 }
 

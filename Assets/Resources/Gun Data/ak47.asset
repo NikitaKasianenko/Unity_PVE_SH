@@ -12,12 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 23696b2266dc103498dc4b20d2b20883, type: 3}
   m_Name: ak47
   m_EditorClassIdentifier: 
-  gunName: 
+  gunName: ak47
   targerLayerMask:
     serializedVersion: 2
     m_Bits: 4294967295
   shootingRange: 100
   fireRate: 10
   damage: 21
+  isAutomatic: 1
   magazineSize: 30
   reloadTime: 3

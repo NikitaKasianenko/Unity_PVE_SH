@@ -6,6 +6,7 @@ public class CharacterRecoil : MonoBehaviour
     public float maxHorizontalRecoil = 20f; 
     public float recoilSmoothTime = 0.1f; 
     public float RecoveryAmountMultiplier = 1f;
+    public bool offRecovery = false;
 
     private float currentHorizontalRecoil = 0f;
     private float targetRecoil = 0f; 
@@ -23,8 +24,11 @@ public class CharacterRecoil : MonoBehaviour
         
         currentHorizontalRecoil = Mathf.SmoothDamp(currentHorizontalRecoil, targetRecoil, ref recoilVelocity, recoilSmoothTime);
 
-        targetRecoil = Mathf.Lerp(targetRecoil, 0f, recoverySpeed * Time.deltaTime);
-       
+        if (!offRecovery)
+        {
+            targetRecoil = Mathf.Lerp(targetRecoil, 0f, recoverySpeed * Time.deltaTime);
+        }
+
         Quaternion currentRotation = transform.localRotation;
         Quaternion recoilRotation = Quaternion.Euler(0f, currentHorizontalRecoil, 0f);
 

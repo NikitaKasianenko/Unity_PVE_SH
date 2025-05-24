@@ -12,18 +12,22 @@ public class GunData : ScriptableObject
     public float shootingRange;
     public float fireRate;
     public float damage;
+    public bool isAutomatic;
 
 
-    [Header("Reload COnfig")]
+    [Header("Reload Config")]
     public int magazineSize;
     public float reloadTime;
 
+    [Header("Recoil Config")]
+    public Vector2[] recoilPoints;
 
-    //[Header("Recoil Setting")]
-    //public float recoilAmount;
-    //public Vector2 recoilMax;
-    //public float recoilSpeed;
-    //public float ResetRecoilSpeed;
-    // change to RecoilPoints
+    [Header("SFX")]
+    public AudioClip aimSFX;
+    public AudioClip reloadSFX;
+    public AudioClip shootSFX;
+    public AudioClip shootEmptySFX;
+    public AudioClip fireModeSFX;
+
 
 }

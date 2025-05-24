@@ -1,10 +1,8 @@
 using UnityEngine;
 
-
-[System.Serializable]
-public class GunRecoil
+public class GunRecoil : MonoBehaviour
 {
-    [SerializeField] public Vector2[] recoilPoints;
+    private Vector2[] recoilPoints;
     private int currentRecoilIndex = 0;
     public float recoilResetDelay = 0.5f;
     private float lastShotTime = 0f;
@@ -12,6 +10,30 @@ public class GunRecoil
     [SerializeField] CameraRecoil camRecoil;
     [SerializeField] CharacterRecoil characterRecoil;
 
+    private void OnEnable()
+    {
+        EventBus.Instance.RecoilData += InitializeRecoil;
+        EventBus.Instance.ApplyRecoil += ApplyRecoil;
+
+    }
+
+    private void OnDisable()
+    {
+        EventBus.Instance.RecoilData -= InitializeRecoil;
+        EventBus.Instance.ApplyRecoil -= ApplyRecoil;
+    }
+
+    private void InitializeRecoil(Vector2[] recoil)
+    {
+        if (recoil != null)
+        {
+            recoilPoints = recoil;
+        }
+        else
+        {
+            Debug.LogError("Recoil points are not set in GunData. Please check the configuration.");
+        }
+    }
 
     public void ApplyRecoil()
     {
