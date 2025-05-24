@@ -22,6 +22,9 @@ MonoBehaviour:
   isAutomatic: 0
   magazineSize: 10
   reloadTime: 2
+  recoilPoints:
+  - {x: 1, y: 1}
+  - {x: 1, y: 1}
   aimSFX: {fileID: 8300000, guid: acaebc89b98b82142bd2b24edb6081e4, type: 3}
   reloadSFX: {fileID: 8300000, guid: 8cc0930892799444bb1a021974a77f3d, type: 3}
   shootSFX: {fileID: 8300000, guid: 25623e0940eac9f46906863c2201b3f5, type: 3}

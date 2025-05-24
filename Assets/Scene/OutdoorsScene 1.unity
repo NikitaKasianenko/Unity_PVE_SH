@@ -2072,20 +2072,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gunData: {fileID: 11400000, guid: b082fc2108c4a0c449a901da7f32e86b, type: 2}
   rayCaster: {fileID: 905022200}
-  ammoText: {fileID: 889118923}
-  gunRecoil:
-    recoilPoints:
-    - {x: 1, y: 1}
-    recoilResetDelay: 0.5
-    camRecoil: {fileID: 7060262298721884331}
-    characterRecoil: {fileID: 3386106341801783473}
-  GunAudio: {fileID: 748775903}
   muzzleEffectsPrefab: {fileID: 1027919237}
   muzzlePoint: {fileID: 631055478}
   showTime: 0.2
-  reloadKey: 114
-  fireToggleKey: 98
-  idleToggleKey: 118
   knockbackForce: 15
 --- !u!95 &748775902
 Animator:
@@ -2109,19 +2098,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &748775903
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 748775899}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: de9da50d4ef976f4398e4bce000508d2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _audioSource: {fileID: 0}
 --- !u!1 &749393847
 GameObject:
   m_ObjectHideFlags: 0
@@ -3064,9 +3040,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: bda21742e1b795445b25adf7c99f1692, type: 3}
       insertIndex: -1
       addedObject: {fileID: 748775902}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: bda21742e1b795445b25adf7c99f1692, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 748775903}
   m_SourcePrefab: {fileID: 100100000, guid: bda21742e1b795445b25adf7c99f1692, type: 3}
 --- !u!4 &843756121 stripped
 Transform:
@@ -3113,7 +3086,7 @@ RectTransform:
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 183.4322, y: 172.3477}
+  m_SizeDelta: {x: 369.5376, y: 172.3477}
   m_Pivot: {x: 1, y: 0}
 --- !u!114 &889118923
 MonoBehaviour:
@@ -3135,7 +3108,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '30
+  m_text: '30 / 30
 
 '
   m_isRightToLeft: 0
@@ -3164,15 +3137,15 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 144.7
-  m_fontSizeBase: 144.7
+  m_fontSize: 110
+  m_fontSizeBase: 110
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
-  m_HorizontalAlignment: 1
-  m_VerticalAlignment: 256
+  m_HorizontalAlignment: 2
+  m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0
@@ -3202,7 +3175,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_margin: {x: -1.7558594, y: 5.2671356, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -23454,6 +23427,10 @@ GameObject:
   - component: {fileID: 1037738271}
   - component: {fileID: 1037738272}
   - component: {fileID: 1037738273}
+  - component: {fileID: 1037738274}
+  - component: {fileID: 1037738275}
+  - component: {fileID: 1037738276}
+  - component: {fileID: 1037738277}
   m_Layer: 0
   m_Name: WeaponHolder
   m_TagString: Untagged
@@ -23521,6 +23498,59 @@ MonoBehaviour:
   reloadKey: 114
   fireToggleKey: 98
   idleToggleKey: 118
+--- !u!114 &1037738274
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1037738269}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3226bb32aab3b1948b4d4da8a238ce67, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1037738275
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1037738269}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de9da50d4ef976f4398e4bce000508d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _audioSource: {fileID: 0}
+--- !u!114 &1037738276
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1037738269}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 59044a179efb5414eae734f3f1f2cbe7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  recoilResetDelay: 0.5
+  camRecoil: {fileID: 7060262298721884331}
+  characterRecoil: {fileID: 3386106341801783473}
+--- !u!114 &1037738277
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1037738269}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a67a5a35bfcd7e4184f72aa97862c28, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ammoText: {fileID: 889118923}
 --- !u!1 &1040321898
 GameObject:
   m_ObjectHideFlags: 0

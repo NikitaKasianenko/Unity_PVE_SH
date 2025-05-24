@@ -65,6 +65,10 @@ public abstract class Gun : MonoBehaviour
 
     private void OnEnable()
     {
+        EventBus.Instance.SetUpWeaponAnimator?.Invoke(_anim);
+        EventBus.Instance.GunDataInit?.Invoke(gunData);
+        EventBus.Instance.RecoilData?.Invoke(gunData.recoilPoints);
+
         EventBus.Instance.FireInput += HandleShootingInput;
         EventBus.Instance.AimingInput += SetAiming;
         EventBus.Instance.ReloadInput += TryReload;
@@ -74,9 +78,15 @@ public abstract class Gun : MonoBehaviour
         EventBus.Instance.IsRunning += OnRunningState;
     }
 
+
     private void OnRunningState(bool state)
     {
         isRunning = state;
+    }
+
+    public void ChangeWeapon()
+    {
+        EventBus.Instance.GunChange?.Invoke();
     }
 
     private void OnDisable()

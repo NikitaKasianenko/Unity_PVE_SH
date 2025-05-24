@@ -3,7 +3,7 @@ using UnityEngine;
 public class GunAnimatorController : MonoBehaviour
 {
     private Animator _anim;
-    private int _reloadHash, _fireHash, _aimHash, _runHash, _idleHash;
+    private int _reloadHash, _fireHash, _aimHash, _runHash, _idleHash, _hideHash;
 
     public GunAnimatorController()
     {
@@ -18,6 +18,7 @@ public class GunAnimatorController : MonoBehaviour
         EventBus.Instance.GunFire += SetFiring;
         EventBus.Instance.GunAim += SetAiming;
         EventBus.Instance.GunIdle += ToggleIdle;
+        EventBus.Instance.GunChange += TriggerHide;
     }
 
     private void SetUpAnimator(Animator animator)
@@ -27,6 +28,7 @@ public class GunAnimatorController : MonoBehaviour
 
     private void OnDisable()
     {
+        EventBus.Instance.SetUpWeaponAnimator -= SetUpAnimator;
         EventBus.Instance.GunReload -= TriggerReload;
         EventBus.Instance.GunFire -= SetFiring;
         EventBus.Instance.GunAim -= SetAiming;
@@ -40,6 +42,7 @@ public class GunAnimatorController : MonoBehaviour
         _aimHash = Animator.StringToHash("Aim");
         _runHash = Animator.StringToHash("Run");
         _idleHash = Animator.StringToHash("Idle");
+        _hideHash = Animator.StringToHash("Hide");
     }
 
     private void Update()
@@ -49,6 +52,8 @@ public class GunAnimatorController : MonoBehaviour
     }
 
     public void TriggerReload() => _anim.SetTrigger(_reloadHash);
+
+    public void TriggerHide() => _anim.SetTrigger(_hideHash);
     public void SetFiring(bool value) => _anim.SetBool(_fireHash, value);
     public bool IsFiring() => _anim.GetBool(_fireHash);
     public void SetAiming(bool value) => _anim.SetBool(_aimHash, value);

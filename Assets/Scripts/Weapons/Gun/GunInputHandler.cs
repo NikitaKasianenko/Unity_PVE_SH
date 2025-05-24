@@ -45,5 +45,18 @@ public class GunInputHandler : MonoBehaviour
             EventBus.Instance.ToggleIdleInput?.Invoke();
         }
 
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            EventBus.Instance.SelectWeaponInput?.Invoke(0);
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            EventBus.Instance.SelectWeaponInput?.Invoke(1);
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            EventBus.Instance.SelectWeaponInput?.Invoke(2);
+        }
+
     }
 }

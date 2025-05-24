@@ -3,15 +3,15 @@ using UnityStandardAssets.Characters.FirstPerson;
 
 public class CameraRecoil : MonoBehaviour
 {
-    public float recoverySpeed = 5f;  
-    public float RecoveryAmountMultiplier = 1f; 
-    public float maxVerticalRecoil = 20f;  
-    public float recoilSmoothTime = 0.1f;  
-    private float recoveryMultiplier = 1f;  
+    public float recoverySpeed = 5f;
+    public float RecoveryAmountMultiplier = 1f;
+    public float maxVerticalRecoil = 20f;
+    public float recoilSmoothTime = 0.1f;
+    private float recoveryMultiplier = 1f;
     private float currentVerticalRecoil = 0f;
 
-    private float targetRecoil = 0f;  
-    private float recoilVelocity = 0f; 
+    private float targetRecoil = 0f;
+    private float recoilVelocity = 0f;
     public bool offRecovery = false;
 
     [SerializeField] FirstPersonController camRecoil;
@@ -26,6 +26,15 @@ public class CameraRecoil : MonoBehaviour
 
         targetRecoil = Mathf.Clamp(targetRecoil, 0f, maxVerticalRecoil);
 
+    }
+    private void OnEnable()
+    {
+        EventBus.Instance.SetUpWeaponAnimator += SetUpAnimator;
+    }
+
+    private void SetUpAnimator(Animator anim)
+    {
+        camRecoil.SetUpAnimator(anim);
     }
 
     private void LateUpdate()

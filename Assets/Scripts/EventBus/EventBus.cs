@@ -22,6 +22,7 @@ public class EventBus
     public Action ReloadInput;
     public Action ToggleIdleInput;
     public Action ToggleFireModeInput;
+    public Action<int> SelectWeaponInput;
 
     //gun
     public Action GunReload;
@@ -33,6 +34,7 @@ public class EventBus
     public Action<Animator> SetUpWeaponAnimator;
     public Action<bool> ReloadAnimState;
     public Action<bool> IsRunning;
+    public Action GunChange;
 
     //GunAudioController
     public Action<GunData> GunDataInit;
