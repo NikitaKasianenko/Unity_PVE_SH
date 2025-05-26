@@ -11,7 +11,7 @@ public class GunInputHandler : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetButtonDown("Fire1"))
+        if (Input.GetButton("Fire1"))
         {
             EventBus.Instance.FireInput?.Invoke(true);
         }

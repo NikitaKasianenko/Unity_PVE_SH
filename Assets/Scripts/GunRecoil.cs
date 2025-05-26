@@ -12,22 +12,22 @@ public class GunRecoil : MonoBehaviour
 
     private void OnEnable()
     {
-        EventBus.Instance.RecoilData += InitializeRecoil;
+        EventBus.Instance.GunDataInit += InitializeRecoil;
         EventBus.Instance.ApplyRecoil += ApplyRecoil;
 
     }
 
     private void OnDisable()
     {
-        EventBus.Instance.RecoilData -= InitializeRecoil;
+        EventBus.Instance.GunDataInit -= InitializeRecoil;
         EventBus.Instance.ApplyRecoil -= ApplyRecoil;
     }
 
-    private void InitializeRecoil(Vector2[] recoil)
+    private void InitializeRecoil(GunData recoil)
     {
         if (recoil != null)
         {
-            recoilPoints = recoil;
+            recoilPoints = recoil.recoilPoints;
         }
         else
         {

@@ -6,6 +6,7 @@ public abstract class Gun : MonoBehaviour
 {
     [Header("Data")]
     public GunData gunData;
+
     [SerializeField] protected Transform rayCaster;
 
 
@@ -14,7 +15,7 @@ public abstract class Gun : MonoBehaviour
     public Transform muzzlePoint;
     public float showTime = 0.2f;
 
-    // Состояние оружия
+    // weapon state
     protected GunAmmo gunAmmo;
     protected float nextTimeToFire = 0f;
     protected bool isReloading = false;
@@ -23,11 +24,10 @@ public abstract class Gun : MonoBehaviour
     protected bool isAutoMode = true;
     protected bool isShooting = false;
     protected bool reloadAnimStarted;
-    protected bool isRunning = false; // Флаг для состояния бега
-    // Вспомогательные флаги
+    protected bool isRunning = false;
+
 
     protected bool hasPlayedAimSound = false;
-    private bool isPlayingEmptySound = false;
     private GameObject muzzleFlashInstance;
     private Animator _anim;
 
@@ -51,7 +51,6 @@ public abstract class Gun : MonoBehaviour
 
         EventBus.Instance.SetUpWeaponAnimator?.Invoke(_anim);
         EventBus.Instance.GunDataInit?.Invoke(gunData);
-        EventBus.Instance.RecoilData?.Invoke(gunData.recoilPoints);
 
         isAutoMode = gunData.isAutomatic;
 
@@ -65,9 +64,10 @@ public abstract class Gun : MonoBehaviour
 
     private void OnEnable()
     {
+        Debug.Log("Gun enabled: " + gameObject.name + " " + transform.localPosition);
+        EventBus.Instance.GunChange += ChangeWeapon;
         EventBus.Instance.SetUpWeaponAnimator?.Invoke(_anim);
         EventBus.Instance.GunDataInit?.Invoke(gunData);
-        EventBus.Instance.RecoilData?.Invoke(gunData.recoilPoints);
 
         EventBus.Instance.FireInput += HandleShootingInput;
         EventBus.Instance.AimingInput += SetAiming;
@@ -76,6 +76,10 @@ public abstract class Gun : MonoBehaviour
         EventBus.Instance.ToggleIdleInput += SetIdleMode;
         EventBus.Instance.ReloadAnimState += OnReloadAnimState;
         EventBus.Instance.IsRunning += OnRunningState;
+
+        reloadAnimStarted = false;
+        isReloading = false;
+
     }
 
 
@@ -86,7 +90,7 @@ public abstract class Gun : MonoBehaviour
 
     public void ChangeWeapon()
     {
-        EventBus.Instance.GunChange?.Invoke();
+
     }
 
     private void OnDisable()
@@ -278,22 +282,22 @@ public abstract class Gun : MonoBehaviour
         }
 
 
-        if (isAutoMode)
-        {
-            TryShoot();
-        }
-        else
-        {
-            if (!mode)
-            {
-                isShooting = true;
-            }
-            if (mode && !isShooting)
-            {
-                isShooting = true;
-                TryShoot();
-            }
-        }
+        //if (isAutoMode)
+        //{
+        //    TryShoot();
+        //}
+        //else
+        //{
+        //    if (!mode)
+        //    {
+        //        isShooting = true;
+        //    }
+        //    if (mode && !isShooting)
+        //    {
+        //        isShooting = true;
+        //        TryShoot();
+        //    }
+        //}
     }
 
 }

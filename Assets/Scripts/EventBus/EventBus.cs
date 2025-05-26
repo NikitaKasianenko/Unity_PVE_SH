@@ -35,6 +35,7 @@ public class EventBus
     public Action<bool> ReloadAnimState;
     public Action<bool> IsRunning;
     public Action GunChange;
+    public Action GunChangeEnd;
 
     //GunAudioController
     public Action<GunData> GunDataInit;
@@ -48,7 +49,6 @@ public class EventBus
     //Recoil 
     public Action<float> RecoilX;
     public Action<float> RecoilY;
-    public Action<Vector2[]> RecoilData;
     public Action ApplyRecoil;
 
     //GunAmmoChange

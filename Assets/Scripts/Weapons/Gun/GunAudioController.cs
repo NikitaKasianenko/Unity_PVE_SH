@@ -18,7 +18,7 @@ public class GunAudioController : MonoBehaviour
 
     }
 
-    private void Start()
+    private void OnEnable()
     {
         EventBus.Instance.GunDataInit += SetClips;
         EventBus.Instance.GunFireSound += PlayShoot;
@@ -26,8 +26,8 @@ public class GunAudioController : MonoBehaviour
         EventBus.Instance.GunReloadSound += PlayReload;
         EventBus.Instance.GunAimSound += PlayAim;
         EventBus.Instance.GunFireModeToggleSound += PlayFireModeToggle;
-
     }
+
     public void SetClips(GunData data)
     {
         aimSFX = data.aimSFX;
