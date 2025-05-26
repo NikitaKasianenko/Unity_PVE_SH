@@ -28,6 +28,6 @@ public class GunData : ScriptableObject
     public AudioClip shootSFX;
     public AudioClip shootEmptySFX;
     public AudioClip fireModeSFX;
-
+    public AudioClip weildSFX;
 
 }

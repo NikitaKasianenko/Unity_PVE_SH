@@ -39,7 +39,7 @@ public class GunAnimatorController : MonoBehaviour
         _runHash = Animator.StringToHash("Run");
         _idleHash = Animator.StringToHash("Idle");
         _hideHash = Animator.StringToHash("Hide");
-        _resetHash = Animator.StringToHash("reset");
+        _resetHash = Animator.StringToHash("Reset");
     }
 
     private void Update()
@@ -51,31 +51,10 @@ public class GunAnimatorController : MonoBehaviour
     private void SetUpAnimator(Animator animator)
     {
 
-        if (_anim != null)
-        {
-            _anim.ResetTrigger(_reloadHash);
-            _anim.ResetTrigger(_hideHash);
-            _anim.SetBool(_fireHash, false);
-            _anim.SetBool(_aimHash, false);
-            _anim.SetBool(_runHash, false);
-            _anim.SetBool(_idleHash, false);
-
-            _anim.enabled = false;
-        }
-
         _anim = animator;
-        _anim.enabled = true;
-        _anim.speed = 1f;
-
-        var originalController = _anim.runtimeAnimatorController;
-        var controllerClone = Instantiate(originalController);
-        _anim.runtimeAnimatorController = controllerClone;
-
         _anim.Rebind();
 
-
-        _anim.Play("weild", 0, 0f);
-
+        StartCoroutine(WaitForWeildAnimation());
         if (_anim.gameObject.activeInHierarchy && _anim.enabled)
         {
             _anim.Update(0f);
@@ -83,6 +62,17 @@ public class GunAnimatorController : MonoBehaviour
 
 
     }
+
+    private IEnumerator WaitForWeildAnimation()
+    {
+        yield return new WaitUntil(() =>
+            _anim.GetCurrentAnimatorStateInfo(0).IsName("weild")
+        );
+        EventBus.Instance.GunWeild?.Invoke();
+
+    }
+
+
 
     public void TriggerReload() => _anim.SetTrigger(_reloadHash);
 
@@ -93,9 +83,13 @@ public class GunAnimatorController : MonoBehaviour
 
     private IEnumerator WaitForHideAnimation()
     {
+        if (_anim.GetCurrentAnimatorStateInfo(0).shortNameHash == _reloadHash)
+        {
+            yield break;
+        }
+
         _anim.SetTrigger(_resetHash);
 
-        // Wait for the animator to enter the Hide state
         yield return new WaitUntil(() =>
             _anim.GetCurrentAnimatorStateInfo(0).shortNameHash == _resetHash
         );

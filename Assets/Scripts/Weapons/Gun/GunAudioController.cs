@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 [Serializable]
@@ -6,26 +7,53 @@ public class GunAudioController : MonoBehaviour
 {
     [Header("SFX Clips")]
 
-    private AudioClip aimSFX, reloadSFX, shootSFX, shootEmptySFX, fireModeSFX;
+    private AudioClip aimSFX, reloadSFX, shootSFX, shootEmptySFX, fireModeSFX, weildSFX;
 
     [SerializeField] private AudioSource _audioSource;
-    private bool _emptyPlaying;
-    private bool _modeSwitchPlaying;
+    private Coroutine _fadeOutCoroutine;
 
     private void Awake()
     {
-        _audioSource = GetComponentInParent<AudioSource>();
+        if (_audioSource == null)
+        {
+            _audioSource = GetComponentInParent<AudioSource>();
+        }
 
     }
 
     private void OnEnable()
     {
         EventBus.Instance.GunDataInit += SetClips;
+        EventBus.Instance.GunWeild += PlayWeild;
         EventBus.Instance.GunFireSound += PlayShoot;
         EventBus.Instance.GunEmptySound += PlayEmpty;
         EventBus.Instance.GunReloadSound += PlayReload;
         EventBus.Instance.GunAimSound += PlayAim;
         EventBus.Instance.GunFireModeToggleSound += PlayFireModeToggle;
+        EventBus.Instance.GunChangeEnd += OnGunChange;
+
+    }
+
+    private void OnGunChange()
+    {
+        _audioSource.Stop();
+    }
+
+    private IEnumerator FadeOutAndStop(float duration)
+    {
+        float startVolume = _audioSource.volume;
+
+        float time = 0f;
+        while (time < duration)
+        {
+            time += Time.deltaTime;
+            float factor = Mathf.Pow(1f - (time / duration), 2f);
+            _audioSource.volume = startVolume * factor;
+            yield return null;
+        }
+
+        _audioSource.Stop();
+        _audioSource.volume = startVolume;
     }
 
     public void SetClips(GunData data)
@@ -35,30 +63,14 @@ public class GunAudioController : MonoBehaviour
         shootSFX = data.shootSFX;
         shootEmptySFX = data.shootEmptySFX;
         fireModeSFX = data.fireModeSFX;
+        weildSFX = data.weildSFX;
     }
 
     public void PlayShoot() => _audioSource.PlayOneShot(shootSFX);
-
-    public void PlayEmpty()
-    {
-        if (_emptyPlaying) return;
-        _emptyPlaying = true;
-        _audioSource.PlayOneShot(shootEmptySFX);
-        Invoke(nameof(ResetEmpty), shootEmptySFX.length);
-    }
-
+    public void PlayEmpty() => _audioSource.PlayOneShot(shootEmptySFX);
     public void PlayReload() => _audioSource.PlayOneShot(reloadSFX);
-
     public void PlayAim() => _audioSource.PlayOneShot(aimSFX);
+    public void PlayWeild() => _audioSource.PlayOneShot(weildSFX);
+    public void PlayFireModeToggle() => _audioSource.PlayOneShot(fireModeSFX);
 
-    public void PlayFireModeToggle()
-    {
-        if (_modeSwitchPlaying) return;
-        _modeSwitchPlaying = true;
-        _audioSource.PlayOneShot(fireModeSFX);
-        Invoke(nameof(ResetModeSwitch), fireModeSFX.length);
-    }
-
-    private void ResetEmpty() => _emptyPlaying = false;
-    private void ResetModeSwitch() => _modeSwitchPlaying = false;
 }

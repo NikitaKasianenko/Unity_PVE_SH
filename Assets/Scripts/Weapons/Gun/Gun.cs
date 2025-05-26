@@ -6,7 +6,6 @@ public abstract class Gun : MonoBehaviour
 {
     [Header("Data")]
     public GunData gunData;
-
     [SerializeField] protected Transform rayCaster;
 
 
@@ -15,8 +14,14 @@ public abstract class Gun : MonoBehaviour
     public Transform muzzlePoint;
     public float showTime = 0.2f;
 
-    // weapon state
+    [Header("SFX-delays")]
+    [SerializeField] private float AimingDelay = 0.5f;
+    [SerializeField] private float EmptyShootDelay = 0.5f;
+    [SerializeField] private float ToggleModeDelay = 0.5f;
+
     protected GunAmmo gunAmmo;
+    // weapon state
+
     protected float nextTimeToFire = 0f;
     protected bool isReloading = false;
     protected bool isAiming = false;
@@ -31,7 +36,7 @@ public abstract class Gun : MonoBehaviour
     private GameObject muzzleFlashInstance;
     private Animator _anim;
 
-    protected Dictionary<string, float> damageMultipliers = new Dictionary<string, float>
+    protected Dictionary<string, float> damageMultiplier = new Dictionary<string, float>
     {
         { "Head", 5.0f },
         { "Body", 1.5f },
@@ -49,8 +54,8 @@ public abstract class Gun : MonoBehaviour
     {
         gunAmmo = new GunAmmo(gunData);
 
-        EventBus.Instance.SetUpWeaponAnimator?.Invoke(_anim);
         EventBus.Instance.GunDataInit?.Invoke(gunData);
+        EventBus.Instance.SetUpWeaponAnimator?.Invoke(_anim);
 
         isAutoMode = gunData.isAutomatic;
 
@@ -68,7 +73,10 @@ public abstract class Gun : MonoBehaviour
         EventBus.Instance.GunChange += ChangeWeapon;
         EventBus.Instance.SetUpWeaponAnimator?.Invoke(_anim);
         EventBus.Instance.GunDataInit?.Invoke(gunData);
-
+        if (gunAmmo != null)
+        {
+            EventBus.Instance.GunAmmoChange.Invoke(gunAmmo);
+        }
         EventBus.Instance.FireInput += HandleShootingInput;
         EventBus.Instance.AimingInput += SetAiming;
         EventBus.Instance.ReloadInput += TryReload;
@@ -86,6 +94,10 @@ public abstract class Gun : MonoBehaviour
     private void OnRunningState(bool state)
     {
         isRunning = state;
+        if (isAiming && isRunning)
+        {
+            EventBus.Instance.GunAim?.Invoke(false);
+        }
     }
 
     public void ChangeWeapon()
@@ -110,7 +122,7 @@ public abstract class Gun : MonoBehaviour
 
     public virtual void TryShoot()
     {
-        if (isReloading)
+        if (isReloading || isRunning)
             return;
 
         if (!gunAmmo.HasAmmo())
@@ -162,30 +174,23 @@ public abstract class Gun : MonoBehaviour
     {
         isReloading = true;
 
-        // Сбрасываем флаг стрельбы и запускаем анимацию перезарядки
         EventBus.Instance.GunFire?.Invoke(false);
         EventBus.Instance.GunReload?.Invoke();
 
-        // Ждем, пока анимация запустится
         while (!reloadAnimStarted)
         {
             yield return null;
         }
 
-        // Воспроизводим звук перезарядки
         EventBus.Instance.GunReloadSound?.Invoke();
-
-        // Ждем окончания перезарядки
         yield return new WaitForSeconds(gunData.reloadTime);
 
-        // Пополняем магазин
         gunAmmo.Reload();
         isReloading = false;
     }
 
     public virtual void SetAiming(bool aiming)
     {
-        // Нельзя прицеливаться во время бега
         if (isRunning)
         { return; }
 
@@ -195,7 +200,6 @@ public abstract class Gun : MonoBehaviour
         isAiming = aiming;
         EventBus.Instance.GunAim?.Invoke(aiming);
 
-        // Воспроизводим звук прицеливания при первом нажатии
         if (aiming && !hasPlayedAimSound)
         {
             EventBus.Instance.GunAimSound?.Invoke();
@@ -231,31 +235,15 @@ public abstract class Gun : MonoBehaviour
         if (muzzleFlashInstance != null)
         {
             muzzleFlashInstance.SetActive(true);
-
-            // Запускаем все системы частиц
             foreach (ParticleSystem ps in muzzleFlashInstance.GetComponentsInChildren<ParticleSystem>())
             {
                 ps.Play();
             }
-
-            // Отключаем эффект через заданное время
-            CancelInvoke(nameof(HideMuzzleFlash));
-            Invoke(nameof(HideMuzzleFlash), showTime);
         }
     }
-
-    private void HideMuzzleFlash()
-    {
-        if (muzzleFlashInstance != null)
-        {
-            muzzleFlashInstance.SetActive(false);
-        }
-    }
-
-
     protected float CalculateDamage(string hitTag)
     {
-        if (damageMultipliers.TryGetValue(hitTag, out float multiplier))
+        if (damageMultiplier.TryGetValue(hitTag, out float multiplier))
         {
             return gunData.damage * multiplier;
         }

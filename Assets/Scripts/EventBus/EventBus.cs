@@ -40,11 +40,13 @@ public class EventBus
     //GunAudioController
     public Action<GunData> GunDataInit;
 
+    //SFX
     public Action GunFireSound;
     public Action GunEmptySound;
     public Action GunReloadSound;
     public Action GunAimSound;
     public Action GunFireModeToggleSound;
+    public Action GunWeild;
 
     //Recoil 
     public Action<float> RecoilX;

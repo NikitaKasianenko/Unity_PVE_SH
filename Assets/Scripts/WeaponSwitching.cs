@@ -26,7 +26,10 @@ public class WeaponSwitching : MonoBehaviour
 
     private void OnSelectWeaponInput(int index)
     {
-        StartCoroutine(WaitAndSelectWeapon(index));
+        if (index != currentWeapon && !(index < 0 || index >= weapons.Length))
+        {
+            StartCoroutine(WaitAndSelectWeapon(index));
+        }
     }
 
     private void GetEnableWeaponChange()
@@ -44,9 +47,6 @@ public class WeaponSwitching : MonoBehaviour
 
     private void SelectWeaponInternal(int index)
     {
-        if (index < 0 || index >= weapons.Length)
-            return;
-
         int i = 0;
         foreach (Transform weapon in transform)
         {
