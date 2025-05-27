@@ -1,3 +1,4 @@
+
 public class GunAmmo
 {
     public int currentAmmo { get; private set; }
@@ -11,7 +12,6 @@ public class GunAmmo
         EventBus.Instance.GunAmmoChange?.Invoke(this);
 
     }
-
     public void UseAmmo()
     {
         if (currentAmmo <= 0) return;

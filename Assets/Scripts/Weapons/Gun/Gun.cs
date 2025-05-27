@@ -73,13 +73,13 @@ public abstract class Gun : MonoBehaviour
     private void OnEnable()
     {
         Debug.Log("Gun enabled: " + gameObject.name + " " + transform.localPosition);
-        EventBus.Instance.GunChange += ChangeWeapon;
         EventBus.Instance.SetUpWeaponAnimator?.Invoke(_anim);
         EventBus.Instance.GunDataInit?.Invoke(gunData);
         if (gunAmmo != null)
         {
             EventBus.Instance.GunAmmoChange.Invoke(gunAmmo);
         }
+        EventBus.Instance.GunChange += ChangeWeapon;
         EventBus.Instance.AutoFireInput += HandleAutoShootingInput;
         EventBus.Instance.SemiFireInput += HandleSemiShootingInput;
         EventBus.Instance.AimingInput += SetAiming;
@@ -102,6 +102,10 @@ public abstract class Gun : MonoBehaviour
         {
             EventBus.Instance.GunAim?.Invoke(false);
         }
+        if (state)
+        {
+            EventBus.Instance.GunFire?.Invoke(false);
+        }
     }
 
     public void ChangeWeapon()
@@ -111,8 +115,9 @@ public abstract class Gun : MonoBehaviour
 
     private void OnDisable()
     {
+        EventBus.Instance.GunChange -= ChangeWeapon;
         EventBus.Instance.AutoFireInput -= HandleAutoShootingInput;
-        EventBus.Instance.SemiFireInput -= HandleAutoShootingInput;
+        EventBus.Instance.SemiFireInput -= HandleSemiShootingInput;
         EventBus.Instance.AimingInput -= SetAiming;
         EventBus.Instance.ReloadInput -= TryReload;
         EventBus.Instance.ToggleFireModeInput -= ToggleFireMode;
@@ -156,9 +161,8 @@ public abstract class Gun : MonoBehaviour
     protected virtual void PerformShot()
     {
         EventBus.Instance.GunFire?.Invoke(true);
-        gunAmmo.UseAmmo();
-
         Shoot();
+        gunAmmo.UseAmmo();
         ShowMuzzleFlash();
         EventBus.Instance.ApplyRecoil?.Invoke();
         EventBus.Instance.GunFireSound?.Invoke();
