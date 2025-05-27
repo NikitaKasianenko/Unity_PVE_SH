@@ -7,9 +7,29 @@ public class GunUI : MonoBehaviour
     public GunAmmo gunAmmo;
     public TMP_Text ammoText;
 
-    private void Update()
+
+    private void OnEnable()
     {
-        if (gunAmmo != null && ammoText != null)
-            ammoText.text = $"{gunAmmo.currentAmmo} / {gunAmmo.maxAmmo}";
+        EventBus.Instance.GunAmmoChange += UpdateAmmoUI;
     }
+
+    private void OnDisable()
+    {
+        EventBus.Instance.GunAmmoChange -= UpdateAmmoUI;
+    }
+
+
+    private void UpdateAmmoUI(GunAmmo ammo)
+    {
+        if (ammoText != null)
+        {
+            ammoText.text = $"{ammo.currentAmmo}/{ammo.maxAmmo}";
+        }
+        else
+        {
+            Debug.LogWarning("Ammo text UI element is not assigned.");
+        }
+
+    }
+
 }

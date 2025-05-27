@@ -1,5 +1,3 @@
-using UnityEngine;
-
 public class GunAmmo
 {
     public int currentAmmo { get; private set; }
@@ -10,18 +8,30 @@ public class GunAmmo
     {
         maxAmmo = data.magazineSize;
         currentAmmo = maxAmmo;
+        EventBus.Instance.GunAmmoChange?.Invoke(this);
 
     }
 
-    public bool TryUseAmmo()
+    public void UseAmmo()
     {
-        if (currentAmmo <= 0) return false;
+        if (currentAmmo <= 0) return;
         currentAmmo--;
-        return true;
+        EventBus.Instance.GunAmmoChange?.Invoke(this);
+    }
+
+    public bool HasAmmo()
+    {
+        return currentAmmo > 0;
+    }
+
+    public bool canReload()
+    {
+        return currentAmmo < maxAmmo;
     }
 
     public void Reload()
     {
         currentAmmo = maxAmmo;
+        EventBus.Instance.GunAmmoChange?.Invoke(this);
     }
 }

@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23696b2266dc103498dc4b20d2b20883, type: 3}
+  m_Name: Pistol
+  m_EditorClassIdentifier: 
+  gunName: Pistol
+  targerLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  shootingRange: 100
+  fireRate: 6
+  damage: 15
+  isAutomatic: 0
+  magazineSize: 10
+  reloadTime: 2
+  recoilPoints:
+  - {x: 1, y: 1}
+  - {x: 1, y: 1}
+  aimSFX: {fileID: 8300000, guid: acaebc89b98b82142bd2b24edb6081e4, type: 3}
+  reloadSFX: {fileID: 8300000, guid: 8cc0930892799444bb1a021974a77f3d, type: 3}
+  shootSFX: {fileID: 8300000, guid: 25623e0940eac9f46906863c2201b3f5, type: 3}
+  shootEmptySFX: {fileID: 8300000, guid: b0989689239234348a15a04f0de3964e, type: 3}
+  fireModeSFX: {fileID: 8300000, guid: b0989689239234348a15a04f0de3964e, type: 3}
+  weildSFX: {fileID: 8300000, guid: 76f6eedeaaf8a69448cc62e0566d33f4, type: 3}

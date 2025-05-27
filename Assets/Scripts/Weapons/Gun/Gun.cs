@@ -1,240 +1,307 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 
 public abstract class Gun : MonoBehaviour
 {
     [Header("Data")]
     public GunData gunData;
-    [SerializeField] public Transform RayCaster;
-    [SerializeField] public Animator animator;
-    [SerializeField] private TMP_Text AmmoText;
-    protected AudioSource audioSource;
+    [SerializeField] protected Transform rayCaster;
 
-    [Header("Recoil")]
-    //TODO 
-    //recoil setting e.g serialize recoil points to GunData
 
-    [SerializeField] public GunRecoil gunRecoil;
-
-    [Header("SFX")]
-    public AudioClip AimSFX;
-    public AudioClip ReloadSFX;
-    public AudioClip ShootSFX;
-    public AudioClip ShootEmptySFX;
     [Header("MuzzleFlash")]
     public GameObject muzzleEffectsPrefab;
     public Transform muzzlePoint;
     public float showTime = 0.2f;
-    private GameObject effectsInstance;
-    private bool isEffectActive;
 
+    [Header("SFX-delays")]
+    [SerializeField] private float AimingDelay = 0.5f;
+    [SerializeField] private float EmptyShootDelay = 0.5f;
+    [SerializeField] private float ToggleModeDelay = 0.5f;
+    private float TimeToAimingSound = 0f, TimeToEmptyShootSound = 0.0f, TimeToToggleModeSound = 0.0f;
 
-    public bool Cursor = true;
+    protected GunAmmo gunAmmo;
+    // weapon state
 
-    protected int ReloadHashCode;
-    protected int FireHashCode;
-    protected int AimHashCode;
-    protected int RunHashCode;
-    protected int IdleHashCode;
-    
-    private float currentAmmo = 0f;
-    private float nextTimeToFire = 0f; 
-    private float nextTimeToPlayAimSFX = 0f;
-
-    private bool isReloading = false;
+    protected float nextTimeToFire = 0f;
+    protected bool isReloading = false;
+    protected bool isAiming = false;
     protected bool isIdle = false;
-    protected bool canShoot = false;
-    protected bool hasPlayedSound = false;
-    private bool isPlayingEmptySound = false;
-    private bool isPlayingFireModeSound = false;
+    protected bool isAutoMode = true;
+    protected bool isShooting = false;
+    protected bool reloadAnimStarted;
+    protected bool isRunning = false;
 
-    protected bool FireMode = true;
 
-    Dictionary<string, float> damageKef = new Dictionary<string, float>
+    protected bool hasPlayedAimSound = false;
+    private GameObject muzzleFlashInstance;
+    private Animator _anim;
+
+    protected Dictionary<string, float> damageMultiplier = new Dictionary<string, float>
     {
-        { "Hand", 1.3f },
-        { "Leg", 1.2f },
         { "Head", 5.0f },
-        { "Body", 1.5f }
+        { "Body", 1.5f },
+        { "Hand", 1.3f },
+        { "Leg", 1.2f }
     };
+
 
     private void Awake()
     {
-        audioSource = GetComponentInParent<AudioSource>();
-        if(gunRecoil == null)
-            gunRecoil = new GunRecoil();
-
-        ReloadHashCode = Animator.StringToHash("Reload");
-        FireHashCode = Animator.StringToHash("Fire");
-        AimHashCode = Animator.StringToHash("Aim");
-        RunHashCode = Animator.StringToHash("Run");
-        IdleHashCode = Animator.StringToHash("Idle");
+        _anim = GetComponent<Animator>();
     }
 
-    private void Start()
+    protected virtual void Start()
     {
-        currentAmmo = gunData.magazineSize;
-        if (!Cursor)
-        {
-            UnityEngine.Cursor.lockState = CursorLockMode.None;
-            UnityEngine.Cursor.visible = true;
-        }
-        else
-        {
-            UnityEngine.Cursor.lockState = CursorLockMode.Locked;
-            UnityEngine.Cursor.visible = false;
-        }
+        gunAmmo = new GunAmmo(gunData);
 
-        effectsInstance = Instantiate(muzzleEffectsPrefab, muzzlePoint.position, muzzlePoint.rotation, muzzlePoint);
-        effectsInstance.SetActive(false);
+        EventBus.Instance.GunDataInit?.Invoke(gunData);
+        EventBus.Instance.SetUpWeaponAnimator?.Invoke(_anim);
+
+        isAutoMode = gunData.isAutomatic;
+
+
+        if (muzzleEffectsPrefab != null && muzzlePoint != null)
+        {
+            muzzleFlashInstance = Instantiate(muzzleEffectsPrefab, muzzlePoint.position, muzzlePoint.rotation, muzzlePoint);
+            muzzleFlashInstance.SetActive(false);
+        }
+    }
+
+    private void OnEnable()
+    {
+        Debug.Log("Gun enabled: " + gameObject.name + " " + transform.localPosition);
+        EventBus.Instance.GunChange += ChangeWeapon;
+        EventBus.Instance.SetUpWeaponAnimator?.Invoke(_anim);
+        EventBus.Instance.GunDataInit?.Invoke(gunData);
+        if (gunAmmo != null)
+        {
+            EventBus.Instance.GunAmmoChange.Invoke(gunAmmo);
+        }
+        EventBus.Instance.AutoFireInput += HandleAutoShootingInput;
+        EventBus.Instance.SemiFireInput += HandleSemiShootingInput;
+        EventBus.Instance.AimingInput += SetAiming;
+        EventBus.Instance.ReloadInput += TryReload;
+        EventBus.Instance.ToggleFireModeInput += ToggleFireMode;
+        EventBus.Instance.ToggleIdleInput += SetIdleMode;
+        EventBus.Instance.ReloadAnimState += OnReloadAnimState;
+        EventBus.Instance.IsRunning += OnRunningState;
+
+        reloadAnimStarted = false;
+        isReloading = false;
+
+    }
+
+
+    private void OnRunningState(bool state)
+    {
+        isRunning = state;
+        if (isAiming && isRunning)
+        {
+            EventBus.Instance.GunAim?.Invoke(false);
+        }
+    }
+
+    public void ChangeWeapon()
+    {
+
+    }
+
+    private void OnDisable()
+    {
+        EventBus.Instance.AutoFireInput -= HandleAutoShootingInput;
+        EventBus.Instance.SemiFireInput -= HandleAutoShootingInput;
+        EventBus.Instance.AimingInput -= SetAiming;
+        EventBus.Instance.ReloadInput -= TryReload;
+        EventBus.Instance.ToggleFireModeInput -= ToggleFireMode;
+        EventBus.Instance.ToggleIdleInput -= SetIdleMode;
+        EventBus.Instance.ReloadAnimState -= OnReloadAnimState;
+        EventBus.Instance.IsRunning -= OnRunningState;
     }
 
     public virtual void Update()
     {
-        AmmoText.text = currentAmmo.ToString();
     }
 
-    public void TryReload()
+    public virtual void TryShoot()
     {
-        if(!isReloading && currentAmmo < gunData.magazineSize)
+        if (isReloading || isRunning)
+            return;
+
+        if (!gunAmmo.HasAmmo())
+        {
+            NoAmmoEvent();
+            return;
+        }
+
+        if (Time.time >= nextTimeToFire)
+        {
+            nextTimeToFire = Time.time + (1f / gunData.fireRate);
+            PerformShot();
+        }
+    }
+
+    private void NoAmmoEvent()
+    {
+        EventBus.Instance.GunFire?.Invoke(false);
+        if (Time.time + EmptyShootDelay > TimeToEmptyShootSound)
+        {
+            EventBus.Instance.GunEmptySound?.Invoke();
+            TimeToEmptyShootSound = Time.time;
+        }
+    }
+
+    protected virtual void PerformShot()
+    {
+        EventBus.Instance.GunFire?.Invoke(true);
+        gunAmmo.UseAmmo();
+
+        Shoot();
+        ShowMuzzleFlash();
+        EventBus.Instance.ApplyRecoil?.Invoke();
+        EventBus.Instance.GunFireSound?.Invoke();
+    }
+
+    private void OnReloadAnimState(bool isStarted)
+    {
+        reloadAnimStarted = isStarted;
+    }
+
+    public abstract void Shoot();
+
+    public virtual void TryReload()
+    {
+        if (!isReloading && gunAmmo.canReload())
         {
             StartCoroutine(Reload());
         }
     }
 
-    private IEnumerator Reload()
+    protected virtual IEnumerator Reload()
     {
-
         isReloading = true;
-        canShoot = false;
 
-        animator.SetBool(FireHashCode, false);
-        animator.SetTrigger(ReloadHashCode);
+        EventBus.Instance.GunFire?.Invoke(false);
+        EventBus.Instance.GunReload?.Invoke();
 
-        float timeout = 1f;
-        float elapsed = 0f;
-
-        while (animator.GetCurrentAnimatorStateInfo(0).shortNameHash != ReloadHashCode && elapsed < timeout)
+        while (!reloadAnimStarted)
         {
             yield return null;
-            elapsed += Time.deltaTime;
         }
 
-        audioSource.PlayOneShot(ReloadSFX);
+        EventBus.Instance.GunReloadSound?.Invoke();
         yield return new WaitForSeconds(gunData.reloadTime);
 
-        currentAmmo = gunData.magazineSize;
+        gunAmmo.Reload();
         isReloading = false;
-        canShoot = true;
     }
 
-    public void TryShoot()
+    public virtual void SetAiming(bool aiming)
     {
-        if ((isReloading))
+        if (isRunning)
+        { return; }
+
+        if (isIdle)
+        { EventBus.Instance.GunAim?.Invoke(false); }
+
+        isAiming = aiming;
+        EventBus.Instance.GunAim?.Invoke(aiming);
+
+        if (aiming && !hasPlayedAimSound && Time.time - AimingDelay > TimeToAimingSound)
+        {
+            EventBus.Instance.GunAimSound?.Invoke();
+            TimeToAimingSound = Time.time;
+            hasPlayedAimSound = true;
+        }
+        if (!aiming)
+        {
+            hasPlayedAimSound = false;
+        }
+    }
+
+    public virtual void ToggleFireMode()
+    {
+        if (!gunData.isAutomatic)
         {
             return;
         }
-        if(currentAmmo <= 0f)
+
+        if (Time.time + ToggleModeDelay > TimeToToggleModeSound)
         {
-            canShoot = false;
-            SetShootAnimation();
-            if(Time.time >= nextTimeToFire && !isPlayingEmptySound && !animator.GetBool(RunHashCode)){
-                audioSource.PlayOneShot(ShootEmptySFX);
-                isPlayingEmptySound = true;
-                StartCoroutine(ResetEmptySound(ShootEmptySFX.length));
-            }
-            return;
+            isAutoMode = !isAutoMode;
+            TimeToToggleModeSound = Time.time;
+            EventBus.Instance.GunFireModeToggleSound?.Invoke();
         }
-        if(Time.time >= nextTimeToFire)
-        {
-            nextTimeToFire = Time.time + (1 / gunData.fireRate);
-            HandleShoot();
-        }
-    }
-
-    private IEnumerator ResetEmptySound(float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        isPlayingEmptySound = false;
-    }
-
-    private void HandleShoot()
-    {
-        animator.SetBool(FireHashCode, true);
-        currentAmmo--;
-
-        muzzleFlash();
-        Shoot();
-        audioSource.PlayOneShot(ShootSFX);
-        StartCoroutine(SetShootAnimation());
-    }
-
-    private void muzzleFlash()
-    {
-        effectsInstance.SetActive(true);
-        foreach (var ps in effectsInstance.GetComponentsInChildren<ParticleSystem>())
-        {
-            ps.Play();
-        }
-        CancelInvoke(nameof(HideEffects));
-        Invoke(nameof(HideEffects), showTime);
-    }
-
-    public IEnumerator SetShootAnimation()
-    {
-        yield return new WaitForSeconds(0.1f);
-        animator.SetBool(FireHashCode, canShoot);
 
     }
-    public void SetIdleAnimation()
+
+    public virtual void SetIdleMode()
     {
         isIdle = !isIdle;
-        animator.SetBool(IdleHashCode, isIdle);
+        EventBus.Instance.GunIdle?.Invoke(isIdle);
     }
 
-    public float DetermineDamage(string tag)
+
+
+    protected virtual void ShowMuzzleFlash()
     {
-        if(damageKef.ContainsKey(tag))
+        if (muzzleFlashInstance != null)
         {
-            return gunData.damage * damageKef[tag];
+            muzzleFlashInstance.SetActive(true);
+            foreach (ParticleSystem ps in muzzleFlashInstance.GetComponentsInChildren<ParticleSystem>())
+            {
+                ps.Play();
+            }
         }
-        return 1.0f;
     }
-
-    void HideEffects()
+    protected float CalculateDamage(string hitTag)
     {
-        effectsInstance.SetActive(false);
-    }
-
-
-    public IEnumerator FireModeSound(float delay)
-    {
-        if (isPlayingFireModeSound)
-            yield break;
-
-        isPlayingFireModeSound = true;
-        audioSource.PlayOneShot(ShootEmptySFX);
-        yield return new WaitForSeconds(delay);
-        isPlayingFireModeSound = false;
-    }
-
-    public IEnumerator AimSound(float delay)
-    {
-        if(Time.time >= nextTimeToPlayAimSFX)
+        if (damageMultiplier.TryGetValue(hitTag, out float multiplier))
         {
-            nextTimeToFire = Time.time + (1 / 2);
-            audioSource.PlayOneShot(AimSFX);
+            return gunData.damage * multiplier;
+        }
+        return gunData.damage;
+    }
 
+
+    private void HandleAutoShootingInput(bool mode)
+    {
+        if (!isAutoMode)
+        {
+            return;
         }
 
-        yield return new WaitForSeconds(delay);
+        HandleShooting(mode);
+
+    }
+    private void HandleSemiShootingInput(bool mode)
+    {
+        if (isAutoMode)
+        {
+            return;
+        }
+
+        HandleShooting(mode);
 
     }
 
-    public abstract void Shoot();
-     
+    private void HandleShooting(bool mode)
+    {
+        if (!mode)
+        {
+            EventBus.Instance.GunFire?.Invoke(false);
+        }
 
+        if (isIdle || isReloading)
+        {
+            EventBus.Instance.GunAim?.Invoke(false);
+            return;
+        }
+
+        if (mode)
+        {
+            TryShoot();
+        }
+    }
 }
+

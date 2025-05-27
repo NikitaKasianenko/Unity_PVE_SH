@@ -12,12 +12,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 23696b2266dc103498dc4b20d2b20883, type: 3}
   m_Name: ak47
   m_EditorClassIdentifier: 
-  gunName: 
+  gunName: ak47
   targerLayerMask:
     serializedVersion: 2
     m_Bits: 4294967295
   shootingRange: 100
   fireRate: 10
   damage: 21
+  isAutomatic: 1
   magazineSize: 30
   reloadTime: 3
+  recoilPoints:
+  - {x: 1, y: 1}
+  - {x: 1, y: 1}
+  aimSFX: {fileID: 8300000, guid: acaebc89b98b82142bd2b24edb6081e4, type: 3}
+  reloadSFX: {fileID: 8300000, guid: 5b907074256e36d41b92e89fb0790633, type: 3}
+  shootSFX: {fileID: 8300000, guid: 875c2b64d62c5074e9fddefd4c92dfca, type: 3}
+  shootEmptySFX: {fileID: 8300000, guid: b0989689239234348a15a04f0de3964e, type: 3}
+  fireModeSFX: {fileID: 8300000, guid: b0989689239234348a15a04f0de3964e, type: 3}
+  weildSFX: {fileID: 8300000, guid: 76f6eedeaaf8a69448cc62e0566d33f4, type: 3}
