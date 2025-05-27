@@ -18,6 +18,7 @@ public abstract class Gun : MonoBehaviour
     [SerializeField] private float AimingDelay = 0.5f;
     [SerializeField] private float EmptyShootDelay = 0.5f;
     [SerializeField] private float ToggleModeDelay = 0.5f;
+    private float TimeToAimingSound = 0f, TimeToEmptyShootSound = 0.0f, TimeToToggleModeSound = 0.0f;
 
     protected GunAmmo gunAmmo;
     // weapon state
@@ -77,7 +78,8 @@ public abstract class Gun : MonoBehaviour
         {
             EventBus.Instance.GunAmmoChange.Invoke(gunAmmo);
         }
-        EventBus.Instance.FireInput += HandleShootingInput;
+        EventBus.Instance.AutoFireInput += HandleAutoShootingInput;
+        EventBus.Instance.SemiFireInput += HandleSemiShootingInput;
         EventBus.Instance.AimingInput += SetAiming;
         EventBus.Instance.ReloadInput += TryReload;
         EventBus.Instance.ToggleFireModeInput += ToggleFireMode;
@@ -107,7 +109,8 @@ public abstract class Gun : MonoBehaviour
 
     private void OnDisable()
     {
-        EventBus.Instance.FireInput -= HandleShootingInput;
+        EventBus.Instance.AutoFireInput -= HandleAutoShootingInput;
+        EventBus.Instance.SemiFireInput -= HandleAutoShootingInput;
         EventBus.Instance.AimingInput -= SetAiming;
         EventBus.Instance.ReloadInput -= TryReload;
         EventBus.Instance.ToggleFireModeInput -= ToggleFireMode;
@@ -141,7 +144,11 @@ public abstract class Gun : MonoBehaviour
     private void NoAmmoEvent()
     {
         EventBus.Instance.GunFire?.Invoke(false);
-        EventBus.Instance.GunEmptySound?.Invoke();
+        if (Time.time + EmptyShootDelay > TimeToEmptyShootSound)
+        {
+            EventBus.Instance.GunEmptySound?.Invoke();
+            TimeToEmptyShootSound = Time.time;
+        }
     }
 
     protected virtual void PerformShot()
@@ -200,12 +207,13 @@ public abstract class Gun : MonoBehaviour
         isAiming = aiming;
         EventBus.Instance.GunAim?.Invoke(aiming);
 
-        if (aiming && !hasPlayedAimSound)
+        if (aiming && !hasPlayedAimSound && Time.time - AimingDelay > TimeToAimingSound)
         {
             EventBus.Instance.GunAimSound?.Invoke();
+            TimeToAimingSound = Time.time;
             hasPlayedAimSound = true;
         }
-        else if (!aiming)
+        if (!aiming)
         {
             hasPlayedAimSound = false;
         }
@@ -218,8 +226,13 @@ public abstract class Gun : MonoBehaviour
             return;
         }
 
-        isAutoMode = !isAutoMode;
-        EventBus.Instance.GunFireModeToggleSound?.Invoke();
+        if (Time.time + ToggleModeDelay > TimeToToggleModeSound)
+        {
+            isAutoMode = !isAutoMode;
+            TimeToToggleModeSound = Time.time;
+            EventBus.Instance.GunFireModeToggleSound?.Invoke();
+        }
+
     }
 
     public virtual void SetIdleMode()
@@ -251,7 +264,28 @@ public abstract class Gun : MonoBehaviour
     }
 
 
-    private void HandleShootingInput(bool mode)
+    private void HandleAutoShootingInput(bool mode)
+    {
+        if (!isAutoMode)
+        {
+            return;
+        }
+
+        HandleShooting(mode);
+
+    }
+    private void HandleSemiShootingInput(bool mode)
+    {
+        if (isAutoMode)
+        {
+            return;
+        }
+
+        HandleShooting(mode);
+
+    }
+
+    private void HandleShooting(bool mode)
     {
         if (!mode)
         {
@@ -268,25 +302,6 @@ public abstract class Gun : MonoBehaviour
         {
             TryShoot();
         }
-
-
-        //if (isAutoMode)
-        //{
-        //    TryShoot();
-        //}
-        //else
-        //{
-        //    if (!mode)
-        //    {
-        //        isShooting = true;
-        //    }
-        //    if (mode && !isShooting)
-        //    {
-        //        isShooting = true;
-        //        TryShoot();
-        //    }
-        //}
     }
-
 }
 

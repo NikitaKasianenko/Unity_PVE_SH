@@ -7,11 +7,6 @@ public class WeaponSwitching : MonoBehaviour
     [SerializeField] int currentWeapon = 0;
     private bool canChangeWeapon = false;
 
-    void Start()
-    {
-        SelectWeaponInternal(currentWeapon);
-    }
-
     private void OnEnable()
     {
         EventBus.Instance.SelectWeaponInput += OnSelectWeaponInput;

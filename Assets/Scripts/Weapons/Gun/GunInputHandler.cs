@@ -11,24 +11,9 @@ public class GunInputHandler : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetButton("Fire1"))
-        {
-            EventBus.Instance.FireInput?.Invoke(true);
-        }
-        else
-        {
-            EventBus.Instance.FireInput?.Invoke(false);
-        }
-
-
-        if (Input.GetKey(KeyCode.Mouse1))
-        {
-            EventBus.Instance.AimingInput?.Invoke(true);
-        }
-        else
-        {
-            EventBus.Instance.AimingInput?.Invoke(false);
-        }
+        EventBus.Instance.AutoFireInput?.Invoke(Input.GetButton("Fire1"));
+        EventBus.Instance.SemiFireInput?.Invoke(Input.GetButtonDown("Fire1"));
+        EventBus.Instance.AimingInput?.Invoke(Input.GetKey(KeyCode.Mouse1));
 
         if (Input.GetKeyDown(reloadKey))
         {

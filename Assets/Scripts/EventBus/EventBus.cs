@@ -17,7 +17,8 @@ public class EventBus
     }
 
     // inputHandler 
-    public Action<bool> FireInput;
+    public Action<bool> AutoFireInput;
+    public Action<bool> SemiFireInput;
     public Action<bool> AimingInput;
     public Action ReloadInput;
     public Action ToggleIdleInput;
