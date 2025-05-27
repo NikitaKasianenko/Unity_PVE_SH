@@ -23475,6 +23475,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   swayClamp: 0.01
   smoothing: 4
+  jumpBobAmount: 0.012
+  landingBobAmount: 0.008
+  bobSpeed: 6
+  landingVelocityThreshold: -5
 --- !u!114 &1037738272
 MonoBehaviour:
   m_ObjectHideFlags: 0

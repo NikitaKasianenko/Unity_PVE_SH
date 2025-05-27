@@ -20,6 +20,8 @@ public abstract class Gun : MonoBehaviour
     [SerializeField] private float ToggleModeDelay = 0.5f;
     private float TimeToAimingSound = 0f, TimeToEmptyShootSound = 0.0f, TimeToToggleModeSound = 0.0f;
 
+
+    //Gun ammo
     protected GunAmmo gunAmmo;
     // weapon state
 
@@ -144,7 +146,7 @@ public abstract class Gun : MonoBehaviour
     private void NoAmmoEvent()
     {
         EventBus.Instance.GunFire?.Invoke(false);
-        if (Time.time + EmptyShootDelay > TimeToEmptyShootSound)
+        if (Time.time - EmptyShootDelay > TimeToEmptyShootSound)
         {
             EventBus.Instance.GunEmptySound?.Invoke();
             TimeToEmptyShootSound = Time.time;
@@ -226,7 +228,7 @@ public abstract class Gun : MonoBehaviour
             return;
         }
 
-        if (Time.time + ToggleModeDelay > TimeToToggleModeSound)
+        if (Time.time - ToggleModeDelay > TimeToToggleModeSound)
         {
             isAutoMode = !isAutoMode;
             TimeToToggleModeSound = Time.time;
