@@ -176,7 +176,6 @@ public abstract class Gun : MonoBehaviour
     {
         isReloading = true;
 
-        EventBus.Instance.GunFire?.Invoke(false);
         EventBus.Instance.GunReload?.Invoke();
 
         while (!reloadAnimStarted)
@@ -216,7 +215,7 @@ public abstract class Gun : MonoBehaviour
 
     private bool CanOperate()
     {
-        return (isIdle || isReloading || isRunning);
+        return !(isIdle || isReloading || isRunning);
     }
 
     public virtual void ToggleFireMode()
@@ -287,7 +286,7 @@ public abstract class Gun : MonoBehaviour
 
     private void HandleShooting(bool mode)
     {
-        if (CanOperate() || !mode)
+        if (!CanOperate() || !mode)
         {
             EventBus.Instance.GunFire?.Invoke(false);
             return;
