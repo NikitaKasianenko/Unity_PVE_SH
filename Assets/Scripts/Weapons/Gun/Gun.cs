@@ -192,7 +192,7 @@ public abstract class Gun : MonoBehaviour
 
     public virtual void SetAiming(bool aiming)
     {
-        if (CanOperate())
+        if (!CanOperate())
         {
             EventBus.Instance.GunAim?.Invoke(false);
             return;
@@ -215,7 +215,7 @@ public abstract class Gun : MonoBehaviour
 
     private bool CanOperate()
     {
-        return (isIdle || isReloading || isRunning);
+        return !(isIdle || isReloading || isRunning);
     }
 
     public virtual void ToggleFireMode()
@@ -286,7 +286,7 @@ public abstract class Gun : MonoBehaviour
 
     private void HandleShooting(bool mode)
     {
-        if (CanOperate() || !mode)
+        if (!CanOperate() || !mode)
         {
             EventBus.Instance.GunFire?.Invoke(false);
             return;
