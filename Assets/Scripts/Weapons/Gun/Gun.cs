@@ -10,9 +10,9 @@ public abstract class Gun : MonoBehaviour
 
 
     [Header("MuzzleFlash")]
-    public GameObject muzzleEffectsPrefab;
-    public Transform muzzlePoint;
-    public float showTime = 0.2f;
+    [SerializeField] private GameObject muzzleEffectsPrefab;
+    [SerializeField] private Transform muzzlePoint;
+    [SerializeField] private float showTime = 0.2f;
 
     [Header("SFX-delays")]
     [SerializeField] private float AimingDelay = 0.5f;
@@ -98,14 +98,6 @@ public abstract class Gun : MonoBehaviour
     private void OnRunningState(bool state)
     {
         isRunning = state;
-        if (isAiming && isRunning)
-        {
-            EventBus.Instance.GunAim?.Invoke(false);
-        }
-        if (state)
-        {
-            EventBus.Instance.GunFire?.Invoke(false);
-        }
     }
 
     public void ChangeWeapon()
@@ -132,9 +124,6 @@ public abstract class Gun : MonoBehaviour
 
     public virtual void TryShoot()
     {
-        if (isReloading || isRunning)
-            return;
-
         if (!gunAmmo.HasAmmo())
         {
             NoAmmoEvent();
@@ -204,11 +193,11 @@ public abstract class Gun : MonoBehaviour
 
     public virtual void SetAiming(bool aiming)
     {
-        if (isRunning)
-        { return; }
-
-        if (isIdle)
-        { EventBus.Instance.GunAim?.Invoke(false); }
+        if (!CanOperate())
+        {
+            EventBus.Instance.GunAim?.Invoke(false);
+            return;
+        }
 
         isAiming = aiming;
         EventBus.Instance.GunAim?.Invoke(aiming);
@@ -223,6 +212,11 @@ public abstract class Gun : MonoBehaviour
         {
             hasPlayedAimSound = false;
         }
+    }
+
+    private bool CanOperate()
+    {
+        return (isIdle || isReloading || isRunning);
     }
 
     public virtual void ToggleFireMode()
@@ -293,14 +287,9 @@ public abstract class Gun : MonoBehaviour
 
     private void HandleShooting(bool mode)
     {
-        if (!mode)
+        if (CanOperate() || !mode)
         {
             EventBus.Instance.GunFire?.Invoke(false);
-        }
-
-        if (isIdle || isReloading)
-        {
-            EventBus.Instance.GunAim?.Invoke(false);
             return;
         }
 
@@ -309,5 +298,7 @@ public abstract class Gun : MonoBehaviour
             TryShoot();
         }
     }
+
+
 }
 
