@@ -176,7 +176,6 @@ public abstract class Gun : MonoBehaviour
     {
         isReloading = true;
 
-        EventBus.Instance.GunFire?.Invoke(false);
         EventBus.Instance.GunReload?.Invoke();
 
         while (!reloadAnimStarted)
@@ -193,7 +192,7 @@ public abstract class Gun : MonoBehaviour
 
     public virtual void SetAiming(bool aiming)
     {
-        if (!CanOperate())
+        if (CanOperate())
         {
             EventBus.Instance.GunAim?.Invoke(false);
             return;
