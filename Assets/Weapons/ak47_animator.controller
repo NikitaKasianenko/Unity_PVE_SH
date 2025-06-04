@@ -397,7 +397,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Reset
-  m_Speed: 1
+  m_Speed: 20
   m_CycleOffset: 0
   m_Transitions: []
   m_StateMachineBehaviours: []
@@ -715,7 +715,7 @@ AnimatorStateMachine:
     m_Position: {x: 360, y: 20, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -3958823838407807867}
-    m_Position: {x: -80, y: 270, z: 0}
+    m_Position: {x: -140, y: 320, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -4005814611062396075}
     m_Position: {x: -140, y: 390, z: 0}
@@ -1100,7 +1100,7 @@ AnimatorStateTransition:
   m_Mute: 0
   m_IsExit: 0
   serializedVersion: 3
-  m_TransitionDuration: 0.25
+  m_TransitionDuration: 0
   m_TransitionOffset: 0
   m_ExitTime: 0.75
   m_HasExitTime: 0
