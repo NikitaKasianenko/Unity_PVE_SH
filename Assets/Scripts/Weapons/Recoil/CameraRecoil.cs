@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityStandardAssets.Characters.FirstPerson;
 
 public class CameraRecoil : MonoBehaviour
 {
@@ -14,7 +13,7 @@ public class CameraRecoil : MonoBehaviour
     private float recoilVelocity = 0f;
     public bool offRecovery = false;
 
-    [SerializeField] FirstPersonController camRecoil;
+    [SerializeField] PlayerController camRecoil;
     public void AddVerticalRecoil(float verticalRecoil)
     {
         verticalRecoil *= RecoveryAmountMultiplier;
@@ -29,12 +28,6 @@ public class CameraRecoil : MonoBehaviour
     }
     private void OnEnable()
     {
-        EventBus.Instance.SetUpWeaponAnimator += SetUpAnimator;
-    }
-
-    private void SetUpAnimator(Animator anim)
-    {
-        camRecoil.SetUpAnimator(anim);
     }
 
     private void LateUpdate()

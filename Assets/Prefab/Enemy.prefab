@@ -3543,7 +3543,8 @@ GameObject:
   m_Component:
   - component: {fileID: 5911132841964917295}
   - component: {fileID: 7165941243990058174}
-  - component: {fileID: 3442785336177423224}
+  - component: {fileID: 7919133916883808258}
+  - component: {fileID: 2484192216274990613}
   m_Layer: 7
   m_Name: Enemy
   m_TagString: Enemy
@@ -3590,7 +3591,7 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &3442785336177423224
+--- !u!114 &7919133916883808258
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -3599,12 +3600,24 @@ MonoBehaviour:
   m_GameObject: {fileID: 6488868469435596808}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6fc2999bfd145b949bc54b546659b396, type: 3}
+  m_Script: {fileID: 11500000, guid: 2b30fd390a2862146ac79d893acc6aae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   BloodPrefab: {fileID: 1432108483257240414, guid: e1a2bd7a09ac75c44aa5fc29bf80c7df, type: 3}
   HeadPrefab: {fileID: 8554322572380434846, guid: f133c0b202404f74889d3c371e4ee100, type: 3}
-  knockbackForce: 3
+--- !u!114 &2484192216274990613
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6488868469435596808}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61cd9af158b7b864ba65286de29f29b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  knockbackForce: 15
 --- !u!1 &6532747320793893906
 GameObject:
   m_ObjectHideFlags: 0
