@@ -21,7 +21,7 @@ MonoBehaviour:
   damage: 15
   isAutomatic: 0
   bulletPrefab: {fileID: 5092841761388478350, guid: 84aeef3235ec6f741b616102f0bdb0e0, type: 3}
-  bulletSpeed: 25
+  bulletSpeed: 125
   magazineSize: 10
   reloadTime: 2
   recoilPoints:

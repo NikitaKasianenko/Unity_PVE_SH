@@ -11,7 +11,7 @@ public class Bullet : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        rb.useGravity = false;  // если не хотите, чтобы пуля падала
+        //rb.useGravity = false;  if we want to disable gravity
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
     }
 
@@ -20,12 +20,7 @@ public class Bullet : MonoBehaviour
         Destroy(gameObject, lifetime);
     }
 
-    /// <summary>
-    /// direction — направление выстрела,
-    /// damage — базовый урон,
-    /// speed — скорость,
-    /// targetLayerMask — слои, по которым мы бьем
-    /// </summary>
+
     public void Initialize(Vector3 direction, float damage, float speed, LayerMask targetLayerMask)
     {
         this.damage = damage;
@@ -35,7 +30,6 @@ public class Bullet : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        // 1) Фильтрация по слоям
         if (((1 << collision.gameObject.layer) & hitLayers) == 0)
         {
             Destroy(gameObject);
@@ -44,16 +38,12 @@ public class Bullet : MonoBehaviour
 
         Debug.Log("Bullet collided with: " + collision.gameObject.name);
 
-        // 2) Пытаемся найти IDamageable у цели
         var target = collision.collider.GetComponentInParent<IDamageable>();
         if (target != null)
         {
             Debug.Log("Bullet hit target");
 
-            // направление удара
             Vector3 hitDir = rb.linearVelocity.normalized;
-
-            // точка и нормаль контакта
             ContactPoint contact = collision.GetContact(0);
             var hitData = new HitData
             {
@@ -62,17 +52,14 @@ public class Bullet : MonoBehaviour
                 Collider = collision.collider
             };
 
-            // вычисляем финальный урон с учетом тега
             float mult = damageMultiplier.TryGetValue(collision.collider.tag, out var m) ? m : 1f;
             float finalDamage = damage * mult;
-
             target.TakeDamage(finalDamage, hitDir, hitData);
         }
 
         Destroy(gameObject);
     }
 
-    // словарь множителей, как у вас был
     protected Dictionary<string, float> damageMultiplier = new Dictionary<string, float>
     {
         { "Head", 5.0f },
@@ -82,7 +69,6 @@ public class Bullet : MonoBehaviour
     };
 }
 
-// контейнер для данных удара
 public struct HitData
 {
     public Vector3 Point;
