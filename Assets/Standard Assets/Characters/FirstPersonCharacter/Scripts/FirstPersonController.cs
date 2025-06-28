@@ -114,7 +114,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
             m_MoveDir.x = desiredMove.x * speed;
             m_MoveDir.z = desiredMove.z * speed;
 
-            AnimatorSet();
+            //AnimatorSet();
 
 
             if (m_CharacterController.isGrounded)
@@ -141,14 +141,14 @@ namespace UnityStandardAssets.Characters.FirstPerson
             m_MouseLook.UpdateCursorLock();
         }
 
-        private void AnimatorSet()
-        {
-            m_Animator.SetBool("Run", !m_IsWalking);
-            float magnitude = m_CharacterController.velocity.magnitude;
-            float mult = !m_IsWalking ? 2f : magnitude > 0 ? 1.3f : 0.85f;
-            m_Animator.SetFloat("Mult", mult);
-            m_Animator.SetFloat("Mag", magnitude);
-        }
+        //private void AnimatorSet()
+        //{
+        //    m_Animator.SetBool("Run", !m_IsWalking);
+        //    float magnitude = m_CharacterController.velocity.magnitude;
+        //    float mult = !m_IsWalking ? 2f : magnitude > 0 ? 1.3f : 0.85f;
+        //    m_Animator.SetFloat("Mult", mult);
+        //    m_Animator.SetFloat("Mag", magnitude);
+        //}
 
 
         private void PlayJumpSound()

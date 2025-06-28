@@ -1,14 +1,24 @@
-using System.Runtime.CompilerServices;
-using Unity.Cinemachine;
 using UnityEngine;
+using UnityStandardAssets.Utility;
 
 public class PlayerController : MonoBehaviour
 {
     [Header("References")]
-    private CharacterController controller;
-    public CinemachineCamera virtualCamera;
-    [SerializeField] private AudioSource footstepSound;
-    [SerializeField] private Animator animator;
+    private CharacterController characterContoller;
+    public Camera camera;
+    private Vector3 m_OriginalCameraPosition;
+    [SerializeField][Range(0f, 1f)] private float m_RunstepLenghten;
+    private Animator animator;
+    [SerializeField] private CurveControlledBob headBob = new CurveControlledBob();
+    [SerializeField] private LerpControlledBob jumpBob = new LerpControlledBob();
+    private Quaternion characterTargetRot;
+    private Quaternion cameraTargetRot;
+
+    [SerializeField] private AudioSource footStepAudioSource;
+
+
+    [Header("Input")]
+    [SerializeField] private float mouseSensitivity = 1f;
 
     [Header("Movement Settings")]
     [SerializeField] private float moveSpeed = 5f;
@@ -17,32 +27,17 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float gravity = 9.81f;
     [SerializeField] private float jumpHeight = 2f;
 
-    [Header("Animation")]
-    private int animMoveSpeed;
-    private int animJump;
-    private int animGrounded;
-
-
+    private bool previousGrounded = true;
+    private bool isWalking = true;
     private float verticalVelocity;
     private float currentSpeed;
     private float currentSpeedMultiplier;
-    private float xRotation;
 
-    [Header("Camera Bob Settings")]
-    [SerializeField] private float bobFrequency = 1f;
-    [SerializeField] private float bobAmplitude = 1f;
-
-
-    [Header("Recoil")]
-    private Vector3 targetRecoil = Vector3.zero;
-    private Vector3 currentRecoil = Vector3.zero;
-
-    private CinemachineBasicMultiChannelPerlin noiseComponent;
-    //private float bobTimer = 0f;
 
     [Header("Footstep Settings")]
     [SerializeField] private LayerMask terrainLayerMask;
     [SerializeField] private float stepInterval = 1f;
+    [SerializeField] private float stepIntervalHeadBob = 4f;
 
     private float nextStepTimer = 0;
 
@@ -51,42 +46,71 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private AudioClip[] grassFootsteps;
     [SerializeField] private AudioClip[] gravelFootsteps;
 
-    [Header("Input")]
-    [SerializeField] private float mouseSensitivity;
+
     private float moveInput;
     private float turnInput;
     private float mouseX;
     private float mouseY;
 
+    private void OnEnable()
+    {
+        EventBus.Instance.SetUpWeaponAnimator += SetUpAnimator;
+    }
+
+
     private void Start()
     {
-        controller = GetComponent<CharacterController>();
-        noiseComponent = virtualCamera.GetComponent<CinemachineBasicMultiChannelPerlin>();
-        animator = GetComponent<Animator>();
-        SetupAnimator();
-
+        camera = Camera.main;
+        characterContoller = GetComponent<CharacterController>();
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        cameraTargetRot = camera.transform.localRotation;
+        characterTargetRot = transform.localRotation;
+        m_OriginalCameraPosition = camera.transform.localPosition;
+        headBob.Setup(camera, stepIntervalHeadBob);
+    }
+
+    private void SetUpAnimator(Animator anim)
+    {
+        animator = anim;
+    }
+
+    private void AnimatorSet()
+    {
+        animator.SetBool("Run", !isWalking);
+        float magnitude = characterContoller.velocity.magnitude;
+        float mult = !isWalking ? 2f : magnitude > 0 ? 1.3f : 0.85f;
+        animator.SetFloat("Mult", mult);
+        animator.SetFloat("Mag", magnitude);
     }
 
     private void Update()
     {
         InputManagement();
         Movement();
-
         PlayFootstepSound();
+        AnimatorSet();
+
+    }
+
+    private void FixedUpdate()
+    {
+        UpdateCameraPosition(currentSpeedMultiplier);
     }
 
     private void LateUpdate()
     {
-        CameraBob();
+        //CameraBob();
     }
 
     private void Movement()
     {
         GroundMovement();
         Turn();
+
     }
+
+
 
     private void GroundMovement()
     {
@@ -95,73 +119,77 @@ public class PlayerController : MonoBehaviour
 
         moveDirection.Normalize();
         moveDirection *= currentSpeed;
-
         if (Input.GetKey(KeyCode.LeftShift))
         {
             currentSpeedMultiplier = sprintSpeedMultiplier;
+            isWalking = false;
         }
         else
         {
             currentSpeedMultiplier = 1f;
+            isWalking = true;
         }
 
+        currentSpeedMultiplier = Input.GetKey(KeyCode.LeftShift) ? sprintSpeedMultiplier : 1f;
         currentSpeed = Mathf.Lerp(currentSpeed, moveSpeed * currentSpeedMultiplier, sprintTransitSpeed * Time.deltaTime);
-
         moveDirection.y = VerticalForceCalculation();
+        characterContoller.Move(moveDirection * Time.deltaTime);
 
-        controller.Move(moveDirection * Time.deltaTime);
 
-        animator.SetFloat(animMoveSpeed, currentSpeed * Mathf.Max(Mathf.Abs(moveInput), Mathf.Abs(turnInput)));
+        if (!previousGrounded && characterContoller.isGrounded)
+        {
+            StartCoroutine(jumpBob.DoBobCycle());
+        }
 
+        previousGrounded = characterContoller.isGrounded;
+
+
+
+
+    }
+
+    private void UpdateCameraPosition(float speed)
+    {
+        Vector3 newCameraPosition;
+        if (characterContoller.velocity.magnitude > 0 && characterContoller.isGrounded)
+        {
+            camera.transform.localPosition = headBob.DoHeadBob(characterContoller.velocity.magnitude +
+                                  (speed * (isWalking ? 1f : m_RunstepLenghten)));
+            newCameraPosition = camera.transform.localPosition;
+            newCameraPosition.y = camera.transform.localPosition.y - jumpBob.Offset();
+        }
+        else
+        {
+            newCameraPosition = camera.transform.localPosition;
+            newCameraPosition.y = m_OriginalCameraPosition.y - jumpBob.Offset();
+        }
+        camera.transform.localPosition = newCameraPosition;
     }
 
 
     private void Turn()
     {
-        mouseX *= mouseSensitivity * Time.deltaTime;
-        mouseY *= mouseSensitivity * Time.deltaTime;
+        float yRot = mouseY * mouseSensitivity;
+        float xRot = mouseX * mouseSensitivity;
 
-        xRotation -= mouseY;
+        characterTargetRot *= Quaternion.Euler(0f, yRot, 0f);
+        cameraTargetRot *= Quaternion.Euler(-xRot, 0f, 0f);
+        cameraTargetRot = ClampRotationAroundXAxis(cameraTargetRot);
 
-        xRotation = Mathf.Clamp(xRotation, -90, 90);
+        transform.localRotation = characterTargetRot;
+        camera.transform.localRotation = cameraTargetRot;
 
-        virtualCamera.transform.localRotation = Quaternion.Slerp(virtualCamera.transform.localRotation, Quaternion.Euler(xRotation + currentRecoil.y, currentRecoil.x, 0), 50f * Time.deltaTime);
-
-        transform.Rotate(Vector3.up * mouseX);
     }
 
-    //public void ApplyRecoil(GunData gunData)
-    //{
-    //    float recoilX = Random.Range(-gunData.recoilMax.x, gunData.recoilMax.x) * gunData.recoilAmount;
-    //    float recoilY = Random.Range(-gunData.recoilMax.y, gunData.recoilMax.y) * gunData.recoilAmount;
-
-    //    targetRecoil += new Vector3(recoilX, recoilY, 0);
-    //    currentRecoil = Vector3.MoveTowards(currentRecoil, targetRecoil, Time.deltaTime * gunData.recoilSpeed);
-    //}
-
-    //public void ResetRecoil(GunData gunData)
-    //{
-    //    currentRecoil = Vector3.MoveTowards(currentRecoil, Vector3.zero, Time.deltaTime * gunData.ResetRecoilSpeed);
-    //    currentRecoil = Vector3.MoveTowards(targetRecoil, Vector3.zero, Time.deltaTime * gunData.ResetRecoilSpeed);
-    //}
-
-    private void CameraBob()
+    public void AddRecoil(Quaternion recoilAmount)
     {
-        if (controller.isGrounded && controller.velocity.magnitude > 0.1f)
-        {
-            noiseComponent.AmplitudeGain = bobAmplitude * currentSpeedMultiplier;
-            noiseComponent.FrequencyGain = bobFrequency * currentSpeedMultiplier;
-        }
-        else
-        {
-            noiseComponent.AmplitudeGain = 0.0f;
-            noiseComponent.FrequencyGain = 0.0f;
-        }
+        cameraTargetRot *= recoilAmount;
     }
+
 
     private void PlayFootstepSound()
     {
-        if (controller.isGrounded && controller.velocity.magnitude > 0.1f)
+        if (characterContoller.isGrounded && characterContoller.velocity.magnitude > 0.1f)
         {
             if (Time.time >= nextStepTimer)
             {
@@ -171,7 +199,7 @@ public class PlayerController : MonoBehaviour
                 {
                     AudioClip clip = footstepClips[Random.Range(0, footstepClips.Length)];
 
-                    footstepSound.PlayOneShot(clip);
+                    footStepAudioSource.PlayOneShot(clip);
                 }
 
                 nextStepTimer = Time.time + (stepInterval / currentSpeedMultiplier);
@@ -204,40 +232,41 @@ public class PlayerController : MonoBehaviour
 
     private float VerticalForceCalculation()
     {
-        if (controller.isGrounded)
+        if (characterContoller.isGrounded)
         {
             verticalVelocity = -1;
-            Debug.Log("Grounded");
-            animator.SetBool(animGrounded, true);
 
             if (Input.GetButtonDown("Jump"))
             {
                 verticalVelocity = Mathf.Sqrt(jumpHeight * gravity * 2);
-                animator.SetTrigger(animJump);
             }
         }
         else
         {
             verticalVelocity -= gravity * Time.deltaTime;
-
-            animator.SetBool(animGrounded, false);
-            Debug.Log("not Grounded");
         }
         return verticalVelocity;
     }
-
-    private void SetupAnimator()
-    {
-        animMoveSpeed = Animator.StringToHash("MoveInput");
-        animJump = Animator.StringToHash("Jump");
-        animGrounded = Animator.StringToHash("Grounded");
-    }
-
     private void InputManagement()
     {
         moveInput = Input.GetAxis("Vertical");
         turnInput = Input.GetAxis("Horizontal");
-        mouseX = Input.GetAxis("Mouse X");
-        mouseY = Input.GetAxis("Mouse Y");
+        mouseY = Input.GetAxis("Mouse X");
+        mouseX = Input.GetAxis("Mouse Y");
+    }
+
+    Quaternion ClampRotationAroundXAxis(Quaternion q)
+    {
+        q.x /= q.w;
+        q.y /= q.w;
+        q.z /= q.w;
+        q.w = 1.0f;
+
+        float angleX = 2.0f * Mathf.Rad2Deg * Mathf.Atan(q.x);
+        angleX = Mathf.Clamp(angleX, -90f, 90f);
+
+        q.x = Mathf.Tan(0.5f * Mathf.Deg2Rad * angleX);
+
+        return q;
     }
 }

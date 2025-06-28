@@ -4,12 +4,14 @@ using UnityEngine;
 public class GunAnimatorController : MonoBehaviour
 {
     public Animator _anim;
+    public CharacterController _characterController;
     private int _reloadHash, _fireHash, _aimHash, _runHash, _idleHash, _hideHash, _resetHash;
 
     private void Awake()
     {
         InitializeHashes();
     }
+
 
     private void OnEnable()
     {

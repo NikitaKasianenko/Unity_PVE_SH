@@ -20,6 +20,8 @@ MonoBehaviour:
   fireRate: 10
   damage: 21
   isAutomatic: 1
+  bulletPrefab: {fileID: 9072168658778259921, guid: c28004f1e5aa87843a99f8e2df328e4f, type: 3}
+  bulletSpeed: 175
   magazineSize: 30
   reloadTime: 3
   recoilPoints:

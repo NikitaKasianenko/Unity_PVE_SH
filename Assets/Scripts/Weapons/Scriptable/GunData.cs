@@ -14,6 +14,9 @@ public class GunData : ScriptableObject
     public float damage;
     public bool isAutomatic;
 
+    [Header("Bullet")]
+    public GameObject bulletPrefab;
+    public float bulletSpeed;
 
     [Header("Reload Config")]
     public int magazineSize;

@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public abstract class Gun : MonoBehaviour
@@ -39,13 +38,7 @@ public abstract class Gun : MonoBehaviour
     private GameObject muzzleFlashInstance;
     private Animator _anim;
 
-    protected Dictionary<string, float> damageMultiplier = new Dictionary<string, float>
-    {
-        { "Head", 5.0f },
-        { "Body", 1.5f },
-        { "Hand", 1.3f },
-        { "Leg", 1.2f }
-    };
+
 
 
     private void Awake()
@@ -253,14 +246,7 @@ public abstract class Gun : MonoBehaviour
             }
         }
     }
-    protected float CalculateDamage(string hitTag)
-    {
-        if (damageMultiplier.TryGetValue(hitTag, out float multiplier))
-        {
-            return gunData.damage * multiplier;
-        }
-        return gunData.damage;
-    }
+
 
 
     private void HandleAutoShootingInput(bool mode)
