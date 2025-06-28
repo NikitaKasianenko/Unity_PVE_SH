@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 4102017164244907022}
   - component: {fileID: 5205280052709324317}
   - component: {fileID: 1483277886980752325}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: pistol_bullet
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -102,9 +102,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lifetime: 5
-  hitLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
 --- !u!54 &5205280052709324317
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -147,7 +144,7 @@ CapsuleCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
