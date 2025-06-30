@@ -45,11 +45,16 @@ public class RagdollKnockback : MonoBehaviour
         if (animator.enabled)
         {
             animator.enabled = false;
-            foreach (Rigidbody rb in ragdollBodies)
-            {
-                rb.isKinematic = false;
-            }
+            SetRagdollEnabled(false);
             StartCoroutine(Die(hitDirection, hit));
+        }
+    }
+
+    private void SetRagdollEnabled(bool state)
+    {
+        foreach (Rigidbody rb in ragdollBodies)
+        {
+            rb.isKinematic = state;
         }
     }
 
@@ -69,10 +74,7 @@ public class RagdollKnockback : MonoBehaviour
     private void Respawn()
     {
         animator.enabled = true;
-        foreach (Rigidbody rb in ragdollBodies)
-        {
-            rb.isKinematic = true;
-        }
+        SetRagdollEnabled(true);
         enemy.OnRespawn?.Invoke();
     }
 }

@@ -3966,8 +3966,8 @@ GameObject:
   m_Component:
   - component: {fileID: 5911132841964917295}
   - component: {fileID: 7165941243990058174}
-  - component: {fileID: 7919133916883808258}
-  - component: {fileID: 2484192216274990613}
+  - component: {fileID: 1138496491380110686}
+  - component: {fileID: 1170474399552228929}
   m_Layer: 7
   m_Name: Enemy
   m_TagString: Enemy
@@ -4014,7 +4014,7 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &7919133916883808258
+--- !u!114 &1138496491380110686
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -4028,7 +4028,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   BloodPrefab: {fileID: 1432108483257240414, guid: e1a2bd7a09ac75c44aa5fc29bf80c7df, type: 3}
   HeadPrefab: {fileID: 8554322572380434846, guid: f133c0b202404f74889d3c371e4ee100, type: 3}
---- !u!114 &2484192216274990613
+--- !u!114 &1170474399552228929
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
