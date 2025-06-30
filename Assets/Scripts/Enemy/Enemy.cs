@@ -7,7 +7,6 @@ public class Enemy : MonoBehaviour, IDamageable
     private float maxHealth = 100f;
     private float health;
     private Animator animator;
-    private Rigidbody[] ragdollBodies;
     public GameObject BloodPrefab;
     public GameObject HeadPrefab;
     public bool isDead { get; private set; }
@@ -15,6 +14,7 @@ public class Enemy : MonoBehaviour, IDamageable
 
     public event Action<Vector3, HitData> OnDeath;
     public Action OnRespawn;
+    public Action<Vector3, HitData> OnHit;
 
     private void OnEnable()
     {
@@ -30,15 +30,12 @@ public class Enemy : MonoBehaviour, IDamageable
     {
         health = maxHealth;
         animator = GetComponent<Animator>();
-        ragdollBodies = GetComponentsInChildren<Rigidbody>();
-        foreach (Rigidbody rb in ragdollBodies)
-        {
-            rb.isKinematic = true;
-        }
+
     }
     private void HandleRespawn()
     {
         health = maxHealth;
+        isDead = false;
     }
 
 
@@ -57,6 +54,11 @@ public class Enemy : MonoBehaviour, IDamageable
 
     public void TakeDamage(float damage, Vector3 knockbackDirection, HitData hit)
     {
+        if (isDead)
+        {
+            return;
+        }
+
         health -= damage;
         Debug.Log("Health: " + health);
 
@@ -68,6 +70,7 @@ public class Enemy : MonoBehaviour, IDamageable
         else
         {
             OnDeath?.Invoke(knockbackDirection, hit);
+            isDead = true;
             HitEffectVFX(hit);
         }
     }
@@ -97,7 +100,5 @@ public class Enemy : MonoBehaviour, IDamageable
         GameObject effect = Instantiate(HeadPrefab, hit.Point, rot);
         Destroy(effect, 2f);
     }
-
-
 
 }
