@@ -57,11 +57,15 @@ public class PlayerController : MonoBehaviour
         EventBus.Instance.SetUpWeaponAnimator += SetUpAnimator;
     }
 
+    private void Awake()
+    {
+        characterContoller = GetComponent<CharacterController>();
+        if (camera == null)
+            camera = GetComponentInChildren<Camera>(true);
+    }
 
     private void Start()
     {
-        camera = Camera.main;
-        characterContoller = GetComponent<CharacterController>();
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
         cameraTargetRot = camera.transform.localRotation;

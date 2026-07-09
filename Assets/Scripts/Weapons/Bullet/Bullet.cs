@@ -21,11 +21,22 @@ public class Bullet : MonoBehaviour
     }
 
 
-    public void Initialize(Vector3 direction, float damage, float speed, LayerMask targetLayerMask)
+    public void Initialize(Vector3 direction, float damage, float speed, LayerMask targetLayerMask, Transform owner = null)
     {
         this.damage = damage;
         this.hitLayers = targetLayerMask;
         rb.linearVelocity = direction.normalized * speed;
+
+        if (owner != null)
+        {
+            var myCollider = GetComponent<Collider>();
+            if (myCollider != null)
+            {
+                foreach (var ownerCollider in owner.GetComponentsInChildren<Collider>(true))
+                    if (ownerCollider != null)
+                        Physics.IgnoreCollision(myCollider, ownerCollider);
+            }
+        }
     }
 
     private void OnCollisionEnter(Collision collision)
