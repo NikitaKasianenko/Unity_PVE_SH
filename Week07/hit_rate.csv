@@ -1,0 +1,5 @@
+latency_ms,shots,naive_hits,rewind_hits,rewind_uncapped_hits,naive_hitrate,rewind_hitrate,rewind_uncapped_hitrate
+0,20,20,20,20,1.00,1.00,1.00
+100,20,18,20,20,0.90,1.00,1.00
+200,20,7,20,20,0.35,1.00,1.00
+300,20,4,0,20,0.20,0.00,1.00

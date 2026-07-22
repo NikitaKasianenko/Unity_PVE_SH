@@ -443,6 +443,8 @@ GameObject:
   - component: {fileID: 2908333497645605154}
   - component: {fileID: 3653646059179019588}
   - component: {fileID: 8185378516375441560}
+  - component: {fileID: 5306872770582250080}
+  - component: {fileID: 1664329667009225917}
   m_Layer: 0
   m_Name: PlayerCH
   m_TagString: Untagged
@@ -464,6 +466,8 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3248748218250134186}
+  - {fileID: 2480145438955436190}
+  - {fileID: 2901810490229668442}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!143 &48267160252529119
@@ -994,6 +998,46 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Multiplayer.TeamColorSync
   ShowTopMostFoldoutHeaderGroup: 1
   bodyRenderer: {fileID: 2908333497645605154}
+--- !u!114 &5306872770582250080
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6902326387585013325}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2eb6944f8c76810408cc647a3fa0580f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Multiplayer.HitboxHistoryBehaviour
+  ShowTopMostFoldoutHeaderGroup: 1
+  head: {fileID: 2480145438955436190}
+  headRadius: 0.25
+  torso: {fileID: 2901810490229668442}
+  torsoRadius: 0.45
+  capacity: 24
+--- !u!114 &1664329667009225917
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6902326387585013325}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c87d4801a6ffb17489a08e0cc7a0b482, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Multiplayer.WeaponBehaviour
+  ShowTopMostFoldoutHeaderGroup: 1
+  fireOrigin: {fileID: 3248748218250134186}
+  damage: 25
+  headMultiplier: 2
+  range: 300
+  fireCooldown: 0.12
+  rewindWindow: 0.25
+  bloodPrefab: {fileID: 1432108483257240414, guid: e1a2bd7a09ac75c44aa5fc29bf80c7df, type: 3}
+  headshotPrefab: {fileID: 8554322572380434846, guid: f133c0b202404f74889d3c371e4ee100, type: 3}
+  drawDebug: 1
 --- !u!1 &8626508320130505197
 GameObject:
   m_ObjectHideFlags: 0
@@ -1236,6 +1280,68 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 0
+--- !u!1 &8691361709047929501
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2480145438955436190}
+  m_Layer: 0
+  m_Name: HeadHitbox
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2480145438955436190
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8691361709047929501}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.65, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4207684788344622648}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &9218631487424621100
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2901810490229668442}
+  m_Layer: 0
+  m_Name: TorsoHitbox
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2901810490229668442
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9218631487424621100}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.05, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4207684788344622648}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &2724976566551775339
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -10,7 +10,7 @@
     }
   ],
   "dependencies": {
-    "com.ivanmurzak.unity.mcp": "0.82.4",
+    "com.ivanmurzak.unity.mcp": "0.86.1",
     "com.ivanmurzak.unity.mcp.animation": "1.2.24",
     "com.ivanmurzak.unity.mcp.probuilder": "1.2.24",
     "com.ivanmurzak.unity.mcp.terrain": "1.0.10",

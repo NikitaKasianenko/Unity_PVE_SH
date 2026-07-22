@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Game.Multiplayer
 {
     [RequireComponent(typeof(PlayerDataBehaviour))]
-    public class NetworkPlayerHealth : NetworkBehaviour, IDamageable
+    public class NetworkPlayerHealth : NetworkBehaviour, IDamageable, IServerDamageable
     {
         [SerializeField] private float maxHealth = 100f;
         [Tooltip("Seconds a player stays dead before respawning.")]
@@ -78,6 +78,11 @@ namespace Game.Multiplayer
         public void ApplyDamageServerRpc(float amount, ServerRpcParams rpcParams = default)
         {
             ApplyDamage(amount, rpcParams.Receive.SenderClientId);
+        }
+
+        public void ApplyServerDamage(float amount, ulong attackerClientId, bool headshot)
+        {
+            ApplyDamage(amount, attackerClientId);
         }
 
         private void Die(ulong killerClientId)
