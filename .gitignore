@@ -11,6 +11,18 @@
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
 
+# --- Online services credentials (Week08) — never commit secrets ---
+# UGS service-account keys, Steam app keys, EOS product secrets, env files
+*.key
+*service-account*.json
+*serviceaccount*.json
+secrets/
+.env
+.env.*
+*.credentials
+steam_appid.txt
+UGS*.json
+
 # MemoryCaptures can get excessive in size.
 # They also could contain extremely sensitive data
 /[Mm]emoryCaptures/

@@ -1,7 +1,8 @@
 using System;
+using System.Collections.Generic;
+using Game.Multiplayer.Online;
 using TMPro;
 using Unity.Netcode;
-using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -12,20 +13,24 @@ namespace Game.Multiplayer
     {
         public static string LocalPlayerName = "";
 
-        private const ushort Port = 7777;
-
         private enum State { Connect, Connecting, TeamSelect, Playing }
         private State _state = State.Connect;
 
         private GameObject _connectPanel;
         private GameObject _teamPanel;
         private TMP_InputField _nameInput;
-        private TMP_InputField _ipInput;
+        private TMP_Text _statusLabel;
+        private RectTransform _lobbyListRoot;
+
+        private RelayLobbyManager _online;
+        private bool _busy;
 
         private void Start()
         {
             EnsureEventSystem();
+            EnsureOnlineManager();
             BuildUI();
+            InitAsync();
         }
 
         private void Update()
@@ -60,25 +65,93 @@ namespace Game.Multiplayer
             }
         }
 
-        private void OnHost()
+        private void EnsureOnlineManager()
         {
-            LocalPlayerName = _nameInput.text;
-            var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
-            transport.SetConnectionData("127.0.0.1", Port, "0.0.0.0");
-            NetworkManager.Singleton.StartHost();
-            _connectPanel.SetActive(false);
-            _state = State.Connecting;
+            _online = FindFirstObjectByType<RelayLobbyManager>();
+            if (_online == null)
+                _online = new GameObject("RelayLobbyManager").AddComponent<RelayLobbyManager>();
         }
 
-        private void OnJoin()
+        private async void InitAsync()
         {
+            SetStatus("Connecting to Unity Gaming Services…");
+            try
+            {
+                await _online.InitAndSignInAsync(_nameInput != null ? _nameInput.text : null);
+                SetStatus("Signed in. Host a game or refresh the list.");
+                await RefreshAsync();
+            }
+            catch (Exception e)
+            {
+                SetStatus("Sign-in failed: " + e.Message);
+            }
+        }
+
+        private async void OnHostClicked()
+        {
+            if (_busy || !_online.IsSignedIn) return;
+            _busy = true;
             LocalPlayerName = _nameInput.text;
-            var ip = string.IsNullOrWhiteSpace(_ipInput.text) ? "127.0.0.1" : _ipInput.text.Trim();
-            var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
-            transport.SetConnectionData(ip, Port);
-            NetworkManager.Singleton.StartClient();
-            _connectPanel.SetActive(false);
-            _state = State.Connecting;
+            SetStatus("Allocating relay and creating lobby…");
+            try
+            {
+                string joinCode = await _online.HostAsync(BuildLobbyName());
+                SetStatus("Hosting. Relay join code: " + joinCode);
+                _connectPanel.SetActive(false);
+                _state = State.Connecting;
+            }
+            catch (Exception e)
+            {
+                SetStatus("Host failed: " + e.Message);
+            }
+            finally { _busy = false; }
+        }
+
+        private async void OnRefreshClicked() => await RefreshAsync();
+
+        private async System.Threading.Tasks.Task RefreshAsync()
+        {
+            if (_busy || !_online.IsSignedIn) return;
+            _busy = true;
+            SetStatus("Searching for open lobbies…");
+            try
+            {
+                List<LobbyEntry> lobbies = await _online.QueryLobbiesAsync();
+                BuildLobbyList(lobbies);
+                SetStatus(lobbies.Count == 0
+                    ? "No open lobbies. Host one, or refresh again."
+                    : $"Found {lobbies.Count} lobby(ies). Click one to join.");
+            }
+            catch (Exception e)
+            {
+                SetStatus("Browse failed: " + e.Message);
+            }
+            finally { _busy = false; }
+        }
+
+        private async void OnJoinClicked(string lobbyId)
+        {
+            if (_busy || !_online.IsSignedIn) return;
+            _busy = true;
+            LocalPlayerName = _nameInput.text;
+            SetStatus("Joining lobby and relay…");
+            try
+            {
+                await _online.JoinByLobbyIdAsync(lobbyId);
+                _connectPanel.SetActive(false);
+                _state = State.Connecting;
+            }
+            catch (Exception e)
+            {
+                SetStatus("Join failed: " + e.Message);
+            }
+            finally { _busy = false; }
+        }
+
+        private string BuildLobbyName()
+        {
+            string n = _nameInput != null ? _nameInput.text.Trim() : "";
+            return string.IsNullOrEmpty(n) ? "Deathmatch" : n + "'s Deathmatch";
         }
 
         private void OnPickTeam(int team)
@@ -88,6 +161,11 @@ namespace Game.Multiplayer
             _teamPanel.SetActive(false);
             _state = State.Playing;
             SetCursor(false);
+        }
+
+        private void SetStatus(string text)
+        {
+            if (_statusLabel != null) _statusLabel.text = text;
         }
 
         private static PlayerDataBehaviour LocalPlayer()
@@ -130,20 +208,49 @@ namespace Game.Multiplayer
 
         private GameObject BuildConnectPanel(Transform parent)
         {
-            var panel = MakePanel(parent, "ConnectPanel", new Vector2(520, 420), new Color(0, 0, 0, 0.75f));
+            var panel = MakePanel(parent, "ConnectPanel", new Vector2(680, 720), new Color(0, 0, 0, 0.8f));
             var pt = panel.transform;
 
-            MakeLabel(pt, "Team Deathmatch", 44, new Vector2(0, 150), new Vector2(480, 60), TextAlignmentOptions.Center);
-            MakeLabel(pt, "Name", 24, new Vector2(-180, 80), new Vector2(140, 40), TextAlignmentOptions.Left);
-            _nameInput = MakeInput(pt, "Enter name…", "", new Vector2(60, 80), new Vector2(320, 48));
-            MakeLabel(pt, "Host IP", 24, new Vector2(-180, 15), new Vector2(140, 40), TextAlignmentOptions.Left);
-            _ipInput = MakeInput(pt, "127.0.0.1", "127.0.0.1", new Vector2(60, 15), new Vector2(320, 48));
+            MakeLabel(pt, "Team Deathmatch — Online", 40, new Vector2(0, 300), new Vector2(640, 60), TextAlignmentOptions.Center);
 
-            MakeButton(pt, "HOST", new Vector2(-110, -80), new Vector2(200, 60), new Color(0.20f, 0.45f, 1f), OnHost);
-            MakeButton(pt, "JOIN", new Vector2(110, -80), new Vector2(200, 60), new Color(0.25f, 0.6f, 0.3f), OnJoin);
-            MakeLabel(pt, "Host: create the game. Join: connect to a host's IP.", 18,
-                new Vector2(0, -150), new Vector2(480, 40), TextAlignmentOptions.Center);
+            MakeLabel(pt, "Name", 24, new Vector2(-250, 235), new Vector2(140, 40), TextAlignmentOptions.Left);
+            _nameInput = MakeInput(pt, "Enter name…", "", new Vector2(40, 235), new Vector2(400, 48));
+
+            MakeButton(pt, "HOST GAME", new Vector2(-150, 165), new Vector2(260, 60), new Color(0.20f, 0.45f, 1f), OnHostClicked);
+            MakeButton(pt, "REFRESH", new Vector2(150, 165), new Vector2(260, 60), new Color(0.30f, 0.55f, 0.35f), OnRefreshClicked);
+
+            _statusLabel = MakeLabel(pt, "", 20, new Vector2(0, 110), new Vector2(640, 40), TextAlignmentOptions.Center);
+            _statusLabel.color = new Color(1f, 0.9f, 0.5f);
+
+            MakeLabel(pt, "Open lobbies", 22, new Vector2(0, 70), new Vector2(640, 34), TextAlignmentOptions.Center);
+
+            var listGo = new GameObject("LobbyList", typeof(RectTransform));
+            listGo.transform.SetParent(pt, false);
+            _lobbyListRoot = listGo.GetComponent<RectTransform>();
+            _lobbyListRoot.anchorMin = _lobbyListRoot.anchorMax = new Vector2(0.5f, 0.5f);
+            _lobbyListRoot.pivot = new Vector2(0.5f, 1f);
+            _lobbyListRoot.sizeDelta = new Vector2(600, 320);
+            _lobbyListRoot.anchoredPosition = new Vector2(0, 40);
+
             return panel;
+        }
+
+        private void BuildLobbyList(List<LobbyEntry> lobbies)
+        {
+            for (int i = _lobbyListRoot.childCount - 1; i >= 0; i--)
+                Destroy(_lobbyListRoot.GetChild(i).gameObject);
+
+            const float rowH = 54f;
+            const float gap = 8f;
+            int max = Mathf.Min(lobbies.Count, 5);
+            for (int i = 0; i < max; i++)
+            {
+                LobbyEntry e = lobbies[i];
+                string id = e.Id;
+                string label = $"{e.Name}   ({e.Players}/{e.MaxPlayers})";
+                MakeRowButton(_lobbyListRoot, label, new Vector2(0, -i * (rowH + gap)),
+                    new Vector2(580, rowH), new Color(0.18f, 0.22f, 0.30f), () => OnJoinClicked(id));
+            }
         }
 
         private GameObject BuildTeamPanel(Transform parent)
@@ -191,6 +298,11 @@ namespace Game.Multiplayer
 
         private void MakeButton(Transform parent, string label, Vector2 pos, Vector2 size, Color color, Action onClick)
         {
+            MakeRowButton(parent, label, pos, size, color, onClick);
+        }
+
+        private GameObject MakeRowButton(Transform parent, string label, Vector2 pos, Vector2 size, Color color, Action onClick)
+        {
             var go = new GameObject("Button " + label, typeof(RectTransform), typeof(Image), typeof(Button));
             go.transform.SetParent(parent, false);
             var rt = go.GetComponent<RectTransform>();
@@ -201,8 +313,9 @@ namespace Game.Multiplayer
             go.GetComponent<Image>().color = color;
             go.GetComponent<Button>().onClick.AddListener(() => onClick());
 
-            var t = MakeLabel(go.transform, label, 26, Vector2.zero, size, TextAlignmentOptions.Center);
+            var t = MakeLabel(go.transform, label, 24, Vector2.zero, size, TextAlignmentOptions.Center);
             t.fontStyle = FontStyles.Bold;
+            return go;
         }
 
         private static TMP_InputField MakeInput(Transform parent, string placeholder, string initial,

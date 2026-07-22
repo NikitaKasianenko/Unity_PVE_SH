@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
 
@@ -8,7 +9,7 @@ public class DisablePhysicsComponents : MonoBehaviour
     {
         if (Selection.activeGameObject == null)
         {
-            Debug.LogWarning("Выдели объект в Hierarchy");
+            Debug.LogWarning("пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ Hierarchy");
             return;
         }
 
@@ -41,6 +42,7 @@ public class DisablePhysicsComponents : MonoBehaviour
             }
         }
 
-        Debug.Log($"Выключено: Rigidbody={rbCount}, Collider={colCount}");
+        Debug.Log($"пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: Rigidbody={rbCount}, Collider={colCount}");
     }
 }
+#endif

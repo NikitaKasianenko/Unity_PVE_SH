@@ -8,8 +8,11 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scene/OutdoorsScene.unity
     guid: 8124e5870f4fd4c779e7a5f994e84ad1
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scene/OutdoorsScene 1.unity
     guid: 4f45ed60b98d1cd4881279d5d9199e41
+  - enabled: 1
+    path: Assets/Week06/Deathmatch.unity
+    guid: c712c29b61372c443900a902a7fa5a38
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 35845fe01580c41289b024647b1d1c53, type: 3}
