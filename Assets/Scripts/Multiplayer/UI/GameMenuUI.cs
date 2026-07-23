@@ -19,6 +19,7 @@ namespace Game.Multiplayer
         private GameObject _connectPanel;
         private GameObject _teamPanel;
         private TMP_InputField _nameInput;
+        private TMP_InputField _ipInput;
         private TMP_Text _statusLabel;
         private RectTransform _lobbyListRoot;
 
@@ -148,6 +149,31 @@ namespace Game.Multiplayer
             finally { _busy = false; }
         }
 
+        private void OnDirectConnectClicked()
+        {
+            if (_busy) return;
+            LocalPlayerName = _nameInput.text;
+
+            string raw = _ipInput != null ? _ipInput.text.Trim() : "127.0.0.1:7777";
+            string ip = raw;
+            ushort port = 7777;
+            int sep = raw.LastIndexOf(':');
+            if (sep > 0)
+            {
+                ip = raw.Substring(0, sep);
+                ushort.TryParse(raw.Substring(sep + 1), out port);
+            }
+            if (string.IsNullOrWhiteSpace(ip)) ip = "127.0.0.1";
+
+            var transport = NetworkManager.Singleton.GetComponent<Unity.Netcode.Transports.UTP.UnityTransport>();
+            transport.SetConnectionData(ip, port);
+
+            SetStatus($"Connecting to {ip}:{port}…");
+            NetworkManager.Singleton.StartClient();
+            _connectPanel.SetActive(false);
+            _state = State.Connecting;
+        }
+
         private string BuildLobbyName()
         {
             string n = _nameInput != null ? _nameInput.text.Trim() : "";
@@ -208,29 +234,33 @@ namespace Game.Multiplayer
 
         private GameObject BuildConnectPanel(Transform parent)
         {
-            var panel = MakePanel(parent, "ConnectPanel", new Vector2(680, 720), new Color(0, 0, 0, 0.8f));
+            var panel = MakePanel(parent, "ConnectPanel", new Vector2(680, 780), new Color(0, 0, 0, 0.8f));
             var pt = panel.transform;
 
-            MakeLabel(pt, "Team Deathmatch — Online", 40, new Vector2(0, 300), new Vector2(640, 60), TextAlignmentOptions.Center);
+            MakeLabel(pt, "Team Deathmatch — Online", 40, new Vector2(0, 330), new Vector2(640, 60), TextAlignmentOptions.Center);
 
-            MakeLabel(pt, "Name", 24, new Vector2(-250, 235), new Vector2(140, 40), TextAlignmentOptions.Left);
-            _nameInput = MakeInput(pt, "Enter name…", "", new Vector2(40, 235), new Vector2(400, 48));
+            MakeLabel(pt, "Name", 24, new Vector2(-250, 265), new Vector2(140, 40), TextAlignmentOptions.Left);
+            _nameInput = MakeInput(pt, "Enter name…", "", new Vector2(40, 265), new Vector2(400, 48));
 
-            MakeButton(pt, "HOST GAME", new Vector2(-150, 165), new Vector2(260, 60), new Color(0.20f, 0.45f, 1f), OnHostClicked);
-            MakeButton(pt, "REFRESH", new Vector2(150, 165), new Vector2(260, 60), new Color(0.30f, 0.55f, 0.35f), OnRefreshClicked);
+            MakeButton(pt, "HOST GAME", new Vector2(-150, 200), new Vector2(260, 56), new Color(0.20f, 0.45f, 1f), OnHostClicked);
+            MakeButton(pt, "REFRESH", new Vector2(150, 200), new Vector2(260, 56), new Color(0.30f, 0.55f, 0.35f), OnRefreshClicked);
 
-            _statusLabel = MakeLabel(pt, "", 20, new Vector2(0, 110), new Vector2(640, 40), TextAlignmentOptions.Center);
+            _statusLabel = MakeLabel(pt, "", 20, new Vector2(0, 150), new Vector2(640, 40), TextAlignmentOptions.Center);
             _statusLabel.color = new Color(1f, 0.9f, 0.5f);
 
-            MakeLabel(pt, "Open lobbies", 22, new Vector2(0, 70), new Vector2(640, 34), TextAlignmentOptions.Center);
+            MakeLabel(pt, "Open lobbies (Relay)", 22, new Vector2(0, 112), new Vector2(640, 34), TextAlignmentOptions.Center);
 
             var listGo = new GameObject("LobbyList", typeof(RectTransform));
             listGo.transform.SetParent(pt, false);
             _lobbyListRoot = listGo.GetComponent<RectTransform>();
             _lobbyListRoot.anchorMin = _lobbyListRoot.anchorMax = new Vector2(0.5f, 0.5f);
             _lobbyListRoot.pivot = new Vector2(0.5f, 1f);
-            _lobbyListRoot.sizeDelta = new Vector2(600, 320);
-            _lobbyListRoot.anchoredPosition = new Vector2(0, 40);
+            _lobbyListRoot.sizeDelta = new Vector2(600, 210);
+            _lobbyListRoot.anchoredPosition = new Vector2(0, 88);
+
+            MakeLabel(pt, "— or connect to a dedicated server —", 18, new Vector2(0, -190), new Vector2(640, 30), TextAlignmentOptions.Center);
+            _ipInput = MakeInput(pt, "127.0.0.1:7777", "127.0.0.1:7777", new Vector2(-70, -240), new Vector2(320, 48));
+            MakeButton(pt, "DIRECT CONNECT", new Vector2(190, -240), new Vector2(200, 48), new Color(0.5f, 0.4f, 0.2f), OnDirectConnectClicked);
 
             return panel;
         }
@@ -242,7 +272,7 @@ namespace Game.Multiplayer
 
             const float rowH = 54f;
             const float gap = 8f;
-            int max = Mathf.Min(lobbies.Count, 5);
+            int max = Mathf.Min(lobbies.Count, 4);
             for (int i = 0; i < max; i++)
             {
                 LobbyEntry e = lobbies[i];

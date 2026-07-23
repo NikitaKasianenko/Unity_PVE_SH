@@ -28,6 +28,7 @@ namespace Game.Multiplayer
 
         private void Update()
         {
+#if !UNITY_SERVER
             if (!IsOwner || !IsSpawned || fireOrigin == null) return;
 
             if (Input.GetButton("Fire1") && Time.time >= _nextFire)
@@ -35,6 +36,7 @@ namespace Game.Multiplayer
                 _nextFire = Time.time + fireCooldown;
                 FireServerRpc(fireOrigin.position, fireOrigin.forward, NetworkManager.ServerTime.Time);
             }
+#endif
         }
 
         [ServerRpc]

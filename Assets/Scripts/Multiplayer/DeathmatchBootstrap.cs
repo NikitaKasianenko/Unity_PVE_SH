@@ -16,7 +16,19 @@ namespace Game.Multiplayer
 
         private void Awake()
         {
+            Debug.Log($"[DeathmatchBootstrap] Awake — scene='{gameObject.scene.name}', " +
+                      $"dedicatedServer={ServerBootstrap.IsDedicatedServer}, " +
+                      $"args=[{string.Join(" ", System.Environment.GetCommandLineArgs())}]");
+
             EnsureNetworkManager();
+
+            if (ServerBootstrap.IsDedicatedServer)
+            {
+                if (GetComponent<ServerBootstrap>() == null)
+                    gameObject.AddComponent<ServerBootstrap>();
+                return;
+            }
+
             BuildMenu();
             BuildScoreboard();
         }
